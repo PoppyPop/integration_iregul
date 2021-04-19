@@ -11,7 +11,6 @@ from homeassistant.const import (
     TEMP_CELSIUS,
 )
 
-from collections.abc import Mapping
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from typing import Any, Callable, Iterable
 
@@ -83,7 +82,7 @@ class IRegulSensor(CoordinatorEntity, SensorEntity):
         return self.slug
 
     @property
-    def device_info(self) -> Mapping[str, Any]:
+    def device_info(self):
         """Return device information about this entity."""
 
         return {
