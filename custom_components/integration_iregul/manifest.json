@@ -1,0 +1,16 @@
+{
+  "domain": "iregul",
+  "name": "IRegul",
+  "config_flow": true,
+  "documentation": "https://www.home-assistant.io/integrations/iregul",
+  "requirements": [
+    "aioiregul==0.0.8"
+  ],
+  "ssdp": [],
+  "zeroconf": [],
+  "homekit": {},
+  "dependencies": [],
+  "codeowners": [
+    "@PoppyPop"
+  ]
+}

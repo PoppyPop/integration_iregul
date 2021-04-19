@@ -16,7 +16,6 @@ Platform | Description
 `binary_sensor` | Show something `True` or `False`.
 `sensor` | Show info from iregul API.
 
-
 ## Installation
 
 1. Using the tool of choice open the directory (folder) for your HA configuration (where you find `configuration.yaml`).
@@ -45,7 +44,7 @@ custom_components/integration_iregul/sensor.py
 
 <!---->
 
-## Contributions are welcome!
+## Contributions are welcome
 
 ***
 
