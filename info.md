@@ -14,13 +14,13 @@ Platform | Description
 `sensor` | Show info from iregul API.
 
 {% if not installed %}
+
 ## Installation
 
 1. Click install.
-1. In the HA UI go to "Configuration" -> "Integrations" click "+" and search for "Blueprint".
+1. In the HA UI go to "Configuration" -> "Integrations" click "+" and search for "IRegul".
 
 {% endif %}
-
 
 ## Configuration is done in the UI
 
