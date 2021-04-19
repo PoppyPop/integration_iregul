@@ -2,7 +2,7 @@
 from datetime import timedelta
 import logging
 
-DOMAIN = "iregul"
+DOMAIN = "integration_iregul"
 
 CONF_USERNAME = "username"
 CONF_PASSWORD = "password"
