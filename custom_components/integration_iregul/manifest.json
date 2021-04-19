@@ -1,5 +1,5 @@
 {
-  "domain": "iregul",
+  "domain": "integration_iregul",
   "name": "IRegul",
   "config_flow": true,
   "documentation": "https://www.home-assistant.io/integrations/iregul",
