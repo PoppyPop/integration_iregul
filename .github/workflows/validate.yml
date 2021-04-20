@@ -15,4 +15,6 @@ jobs:
         uses: "hacs/action@main"
         with:
           category: "integration"
-          ignore: brands, wheels
+          ignore: 
+            - brands
+            - wheels
