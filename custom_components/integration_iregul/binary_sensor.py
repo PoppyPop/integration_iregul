@@ -59,14 +59,14 @@ class IRegulSensor(CoordinatorEntity, BinarySensorEntity):
     def device_info(self):
         """Return device information about this entity."""
 
+        datas = self.coordinator.entry.data
+
         return {
-            "name": self.coordinator.entry.data[CONF_USERNAME] + " " + self.group,
+            "name": datas[CONF_USERNAME] + " " + self.group,
             "manufacturer": "IRegul",
             "model": self.group,
-            "identifiers": {
-                (DOMAIN, self.group, self.coordinator.entry.data[CONF_USERNAME])
-            },
-            "via_device": (DOMAIN, self.coordinator.entry.data[CONF_USERNAME]),
+            "identifiers": {(DOMAIN, self.group, datas[CONF_USERNAME])},
+            "via_device": (DOMAIN, datas[CONF_USERNAME]),
         }
 
     @property
@@ -77,7 +77,8 @@ class IRegulSensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return super().available and (self.slug in self.coordinator.data[self.group])
+        datas = self.coordinator.data
+        return super().available and (self.slug in datas[self.group])
 
     @property
     def device_class(self) -> str:
