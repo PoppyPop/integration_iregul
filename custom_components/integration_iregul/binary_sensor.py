@@ -60,13 +60,12 @@ class IRegulSensor(CoordinatorEntity, BinarySensorEntity):
         """Return device information about this entity."""
 
         return {
-            "name":
-                self.coordinator.entry.data[CONF_USERNAME] + " " + self.group,
+            "name": self.coordinator.entry.data[CONF_USERNAME] + " " + self.group,
             "manufacturer": "IRegul",
             "model": self.group,
             "identifiers": {
                 (DOMAIN, self.group, self.coordinator.entry.data[CONF_USERNAME])
-                },
+            },
             "via_device": (DOMAIN, self.coordinator.entry.data[CONF_USERNAME]),
         }
 
