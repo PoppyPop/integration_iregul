@@ -6,7 +6,7 @@
 
 [![hacs][hacsbadge]][hacs]
 
-_Component to integrate with [integration_iregul][integration_iregul]._
+_Component to integrate with [aioiregul][aioiregul]._
 
 **This component will set up the following platforms.**
 
@@ -48,6 +48,7 @@ custom_components/integration_iregul/sensor.py
 ---
 
 [integration_iregul]: https://github.com/PoppyPop/integration_iregul
+[aioiregul]: https://github.com/PoppyPop/aioiregul
 [commits-shield]: https://img.shields.io/github/commit-activity/y/poppypop/integration_iregul.svg?style=for-the-badge
 [commits]: https://github.com/PoppyPop/integration_iregul/commits/main
 [hacs]: https://github.com/custom-components/hacs
