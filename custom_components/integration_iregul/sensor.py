@@ -1,33 +1,27 @@
 """Platform for sensor integration."""
-from homeassistant.const import (
-    DEVICE_CLASS_ENERGY,
-    DEVICE_CLASS_POWER,
-    DEVICE_CLASS_PRESSURE,
-    DEVICE_CLASS_TEMPERATURE,
-    ENERGY_KILO_WATT_HOUR,
-    POWER_KILO_WATT,
-    POWER_WATT,
-    PRESSURE_BAR,
-    TEMP_CELSIUS,
-)
-
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from typing import Any, Callable, Iterable
+from typing import Callable
+from typing import Iterable
 
 from homeassistant.components.sensor import SensorEntity
-
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import DEVICE_CLASS_ENERGY
+from homeassistant.const import DEVICE_CLASS_POWER
+from homeassistant.const import DEVICE_CLASS_PRESSURE
+from homeassistant.const import DEVICE_CLASS_TEMPERATURE
+from homeassistant.const import ENERGY_KILO_WATT_HOUR
+from homeassistant.const import POWER_KILO_WATT
+from homeassistant.const import POWER_WATT
+from homeassistant.const import PRESSURE_BAR
+from homeassistant.const import TEMP_CELSIUS
 from homeassistant.core import HomeAssistant
-
 from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import (
-    DOMAIN,
-    REMOTE_MEASURES_ID,
-    REMOTE_OUTPUTS_ID,
-    REMOTE_SENSORS_ID,
-    CONF_USERNAME,
-)
+from .const import CONF_USERNAME
+from .const import DOMAIN
+from .const import REMOTE_MEASURES_ID
+from .const import REMOTE_OUTPUTS_ID
+from .const import REMOTE_SENSORS_ID
 from .coordinator import IRegulDataUpdateCoordinator
 
 

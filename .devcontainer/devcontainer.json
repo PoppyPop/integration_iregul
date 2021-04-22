@@ -1,18 +1,16 @@
 {
-    "image": "ludeeus/container:integration-debian",
-    "name": "IRegul integration development",
-    "context": "..",
-    "appPort": [
-    "9123:8123"
-    ],
-    "postCreateCommand": "container install",
-    "extensions": [
+  "image": "ludeeus/container:integration-debian",
+  "name": "IRegul integration development",
+  "context": "..",
+  "appPort": ["9123:8123"],
+  "postCreateCommand": "container install",
+  "extensions": [
     "ms-python.python",
     "github.vscode-pull-request-github",
     "ryanluker.vscode-coverage-gutters",
     "ms-python.vscode-pylance"
-    ],
-    "settings": {
+  ],
+  "settings": {
     "files.eol": "\n",
     "editor.tabSize": 4,
     "terminal.integrated.shell.linux": "/bin/bash",
@@ -25,5 +23,5 @@
     "editor.formatOnSave": true,
     "editor.formatOnType": true,
     "files.trimTrailingWhitespace": true
-    }
-    }
+  }
+}

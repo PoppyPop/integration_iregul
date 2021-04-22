@@ -10,10 +10,10 @@ _Component to integrate with [integration_iregul][integration_iregul]._
 
 **This component will set up the following platforms.**
 
-Platform | Description
--- | --
-`binary_sensor` | Show something `True` or `False`.
-`sensor` | Show info from iregul API.
+| Platform        | Description                       |
+| --------------- | --------------------------------- |
+| `binary_sensor` | Show something `True` or `False`. |
+| `sensor`        | Show info from iregul API.        |
 
 ## Installation
 
@@ -45,7 +45,7 @@ custom_components/integration_iregul/sensor.py
 
 ## Contributions are welcome
 
-***
+---
 
 [integration_iregul]: https://github.com/PoppyPop/integration_iregul
 [commits-shield]: https://img.shields.io/github/commit-activity/y/poppypop/integration_iregul.svg?style=for-the-badge

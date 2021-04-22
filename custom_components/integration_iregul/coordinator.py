@@ -1,22 +1,18 @@
 """DataUpdateCoordinator for the IRegul integration."""
-from .const import (
-    CONF_PASSWORD,
-    CONF_UPDATE_INTERVAL,
-    CONF_USERNAME,
-    DOMAIN,
-    LOGGER,
-    DEFAULT_SCAN_INTERVAL,
-)
-
 from datetime import timedelta
 
+import aioiregul
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
-
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-import aioiregul
+from .const import CONF_PASSWORD
+from .const import CONF_UPDATE_INTERVAL
+from .const import CONF_USERNAME
+from .const import DEFAULT_SCAN_INTERVAL
+from .const import DOMAIN
+from .const import LOGGER
 
 
 class IRegulDataUpdateCoordinator(DataUpdateCoordinator):

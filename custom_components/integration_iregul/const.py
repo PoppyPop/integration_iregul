@@ -1,6 +1,6 @@
 """Constants for the IRegul integration."""
-from datetime import timedelta
 import logging
+from datetime import timedelta
 
 DOMAIN = "integration_iregul"
 

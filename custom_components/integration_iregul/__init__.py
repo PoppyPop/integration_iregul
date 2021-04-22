@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import asyncio
-import aioiregul
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -12,13 +11,15 @@ from .coordinator import IRegulDataUpdateCoordinator
 
 PLATFORMS = ["sensor", "binary_sensor"]
 
-async def async_setup(hass: HomeAssistant, config: Config):
+
+async def async_setup(hass: HomeAssistant, config: ConfigEntry):
     """Set up this integration using YAML is not supported."""
     return True
 
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up IRegul from a config entry."""
-    
+
     coordinator = IRegulDataUpdateCoordinator(hass, entry=entry)
 
     await coordinator.async_config_entry_first_refresh()

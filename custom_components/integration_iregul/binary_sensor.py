@@ -1,19 +1,17 @@
 """Platform for sensor integration."""
-from homeassistant.components.binary_sensor import BinarySensorEntity, DEVICE_CLASS_POWER
+from typing import Callable
+from typing import Iterable
 
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from typing import Any, Callable, Iterable
-
+from homeassistant.components.binary_sensor import BinarySensorEntity
+from homeassistant.components.binary_sensor import DEVICE_CLASS_POWER
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-
 from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import (
-    DOMAIN,
-    REMOTE_INPUTS_ID,
-    CONF_USERNAME,
-)
+from .const import CONF_USERNAME
+from .const import DOMAIN
+from .const import REMOTE_INPUTS_ID
 from .coordinator import IRegulDataUpdateCoordinator
 
 
@@ -23,7 +21,7 @@ async def async_setup_entry(
     async_add_entities: Callable[[Iterable[Entity]], None],
 ) -> None:
     """Set up Verisure sensors based on a config entry."""
-    coordinator: IRegulDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = hass.data[DOMAIN][entry.entry_id]
 
     sensors: list[Entity] = [
         IRegulSensor(coordinator, id, REMOTE_INPUTS_ID)
@@ -31,6 +29,7 @@ async def async_setup_entry(
     ]
 
     async_add_entities(sensors)
+
 
 class IRegulSensor(CoordinatorEntity, BinarySensorEntity):
     """Representation of a IRegul sensor."""
@@ -61,12 +60,13 @@ class IRegulSensor(CoordinatorEntity, BinarySensorEntity):
         """Return device information about this entity."""
 
         return {
-            "name": self.coordinator.entry.data[CONF_USERNAME] + " " + self.group,
+            "name":
+                self.coordinator.entry.data[CONF_USERNAME] + " " + self.group,
             "manufacturer": "IRegul",
             "model": self.group,
             "identifiers": {
                 (DOMAIN, self.group, self.coordinator.entry.data[CONF_USERNAME])
-            },
+                },
             "via_device": (DOMAIN, self.coordinator.entry.data[CONF_USERNAME]),
         }
 
@@ -78,7 +78,7 @@ class IRegulSensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return super().available and self.slug in self.coordinator.data[self.group]
+        return super().available and (self.slug in self.coordinator.data[self.group])
 
     @property
     def device_class(self) -> str:

@@ -1,8 +1,10 @@
 """Test the IRegul config flow."""
 from unittest.mock import patch
 
-from homeassistant import config_entries, setup
-from homeassistant.components.iregul.config_flow import CannotConnect, InvalidAuth
+from homeassistant import config_entries
+from homeassistant import setup
+from homeassistant.components.iregul.config_flow import CannotConnect
+from homeassistant.components.iregul.config_flow import InvalidAuth
 from homeassistant.components.iregul.const import DOMAIN
 from homeassistant.core import HomeAssistant
 
