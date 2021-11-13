@@ -1,1 +1,6 @@
 homeassistant
+pre-commit
+black
+flake8
+reorder-python-imports
+aioiregul==0.1.3

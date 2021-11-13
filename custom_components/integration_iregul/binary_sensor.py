@@ -53,7 +53,11 @@ class IRegulSensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def unique_id(self) -> str:
         """Return the unique ID for this entity."""
-        return self.slug
+        return self.coordinator.entry.data[CONF_USERNAME] + "-" + self.slug
+
+    @property
+    def force_update(self) -> bool:
+        return True
 
     @property
     def device_info(self):

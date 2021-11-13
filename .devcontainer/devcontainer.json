@@ -1,5 +1,5 @@
 {
-  "image": "ludeeus/container:integration-debian",
+  "image": "ghcr.io/ludeeus/devcontainer/integration:stable",
   "name": "IRegul integration development",
   "context": "..",
   "appPort": ["9123:8123"],

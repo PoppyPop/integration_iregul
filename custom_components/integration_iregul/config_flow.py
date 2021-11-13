@@ -7,7 +7,9 @@ from typing import Any
 import aioiregul
 import voluptuous as vol
 from homeassistant import config_entries
+from homeassistant.core import callback
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
 from .const import CONF_PASSWORD
 from .const import CONF_UPDATE_INTERVAL
@@ -23,7 +25,6 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         CONF_USERNAME: str,
         CONF_PASSWORD: str,
-        vol.Optional(CONF_UPDATE_INTERVAL, default=DEFAULT_UPDATE_INTERVAL): int,
     }
 )
 
@@ -39,8 +40,9 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     aioiregul.Device(connOpt)
 
     hub = aioiregul.Device(connOpt)
+    session = async_create_clientsession(hass)
 
-    if not await hub.authenticate():
+    if not await hub.authenticate(session):
         raise InvalidAuth
 
     # If you cannot connect:
@@ -84,3 +86,38 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors
         )
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        """Get the options flow for this handler."""
+        return OptionsFlowHandler(config_entry)
+
+
+class OptionsFlowHandler(config_entries.OptionsFlow):
+    """Handle a option flow for iregul."""
+
+    def __init__(self, config_entry: config_entries.ConfigEntry):
+        """Initialize options flow."""
+        self.config_entry = config_entry
+
+    async def async_step_init(self, user_input=None):
+        """Handle options flow."""
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        scan_interval = self.config_entry.options.get(
+            CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL
+        )
+
+        optSchem = vol.Schema(
+            {
+                vol.Optional(CONF_UPDATE_INTERVAL, default=scan_interval): int,
+            }
+        )
+
+        return self.async_show_form(step_id="init", data_schema=optSchem)
+
+    async def async_step_abort(self, user_input=None):
+        """Abort options flow."""
+        return self.async_create_entry(title="", data=self.config_entry.options)

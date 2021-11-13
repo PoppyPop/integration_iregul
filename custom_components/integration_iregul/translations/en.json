@@ -11,9 +11,17 @@
     "step": {
       "user": {
         "data": {
-          "upd_int": "Update delay (in minutes)",
           "password": "Password",
           "username": "Username"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "upd_int": "Update delay (in minutes)"
         }
       }
     }

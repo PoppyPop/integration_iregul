@@ -3,6 +3,8 @@ from typing import Callable
 from typing import Iterable
 
 from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import STATE_CLASS_MEASUREMENT
+from homeassistant.components.sensor import STATE_CLASS_TOTAL
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import DEVICE_CLASS_ENERGY
 from homeassistant.const import DEVICE_CLASS_POWER
@@ -74,7 +76,11 @@ class IRegulSensor(CoordinatorEntity, SensorEntity):
     @property
     def unique_id(self) -> str:
         """Return the unique ID for this entity."""
-        return self.slug
+        return self.coordinator.entry.data[CONF_USERNAME] + "-" + self.slug
+
+    @property
+    def force_update(self) -> bool:
+        return True
 
     @property
     def device_info(self):
@@ -89,7 +95,7 @@ class IRegulSensor(CoordinatorEntity, SensorEntity):
         }
 
     @property
-    def state(self) -> str:
+    def native_value(self) -> str:
         """Return the state of the entity."""
         return self.coordinator.data[self.group][self.slug].value
 
@@ -120,7 +126,22 @@ class IRegulSensor(CoordinatorEntity, SensorEntity):
         return None
 
     @property
-    def unit_of_measurement(self) -> str:
+    def state_class(self):
+        """Return the device class."""
+
+        if self.coordinator.data[self.group][self.slug].unit == "kWh":
+            return STATE_CLASS_TOTAL
+
+        if self.coordinator.data[self.group][self.slug].unit == "W":
+            return STATE_CLASS_MEASUREMENT
+
+        if self.coordinator.data[self.group][self.slug].unit == "kW":
+            return STATE_CLASS_MEASUREMENT
+
+        return None
+
+    @property
+    def native_unit_of_measurement(self) -> str:
         """Return the unit of measurement of this entity."""
 
         if self.coordinator.data[self.group][self.slug].unit == "°":
