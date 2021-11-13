@@ -8,9 +8,10 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .const import CONF_PASSWORD, DEFAULT_UPDATE_INTERVAL
+from .const import CONF_PASSWORD
 from .const import CONF_UPDATE_INTERVAL
 from .const import CONF_USERNAME
+from .const import DEFAULT_UPDATE_INTERVAL
 from .const import DOMAIN
 from .const import LOGGER
 
