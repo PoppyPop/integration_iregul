@@ -11,7 +11,7 @@ DEFAULT_UPDATE_INTERVAL = 5
 
 LOGGER = logging.getLogger(__package__)
 
-DEFAULT_SCAN_INTERVAL = timedelta(minutes=1)
+DEFAULT_SCAN_INTERVAL = timedelta(minutes=15)
 
 REMOTE_OUTPUTS_ID = "outputs"
 REMOTE_SENSORS_ID = "sensors"
