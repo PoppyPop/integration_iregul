@@ -5,6 +5,7 @@ import aioiregul
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
 from .const import CONF_PASSWORD
@@ -29,6 +30,8 @@ class IRegulDataUpdateCoordinator(DataUpdateCoordinator):
             refresh_rate=timedelta(minutes=entry.data[CONF_UPDATE_INTERVAL]),
         )
 
+        self.session = async_create_clientsession(hass)
+
         self.iregul = aioiregul.Device(connOpt)
 
         super().__init__(
@@ -38,7 +41,7 @@ class IRegulDataUpdateCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> dict:
         """Fetch data from IRegul."""
         try:
-            return await self.iregul.collect(False)
+            return await self.iregul.collect(False, self.session)
 
         except aioiregul.CannotConnect:
             LOGGER.error("Could not connect")

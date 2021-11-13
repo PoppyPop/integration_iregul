@@ -12,6 +12,8 @@ from homeassistant.const import ENERGY_KILO_WATT_HOUR
 from homeassistant.const import POWER_KILO_WATT
 from homeassistant.const import POWER_WATT
 from homeassistant.const import PRESSURE_BAR
+from homeassistant.const import STATE_CLASS_MEASUREMENT
+from homeassistant.const import STATE_CLASS_TOTAL
 from homeassistant.const import TEMP_CELSIUS
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import Entity
@@ -89,7 +91,7 @@ class IRegulSensor(CoordinatorEntity, SensorEntity):
         }
 
     @property
-    def state(self) -> str:
+    def native_value(self) -> str:
         """Return the state of the entity."""
         return self.coordinator.data[self.group][self.slug].value
 
@@ -120,7 +122,22 @@ class IRegulSensor(CoordinatorEntity, SensorEntity):
         return None
 
     @property
-    def unit_of_measurement(self) -> str:
+    def state_class(self):
+        """Return the device class."""
+
+        if self.coordinator.data[self.group][self.slug].unit == "kWh":
+            return STATE_CLASS_TOTAL
+
+        if self.coordinator.data[self.group][self.slug].unit == "W":
+            return STATE_CLASS_MEASUREMENT
+
+        if self.coordinator.data[self.group][self.slug].unit == "kW":
+            return STATE_CLASS_MEASUREMENT
+
+        return None
+
+    @property
+    def native_unit_of_measurement(self) -> str:
         """Return the unit of measurement of this entity."""
 
         if self.coordinator.data[self.group][self.slug].unit == "°":
