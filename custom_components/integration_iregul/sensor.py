@@ -79,6 +79,10 @@ class IRegulSensor(CoordinatorEntity, SensorEntity):
         return self.coordinator.entry.data[CONF_USERNAME] + "-" + self.slug
 
     @property
+    def force_update(self) -> bool:
+        return True
+
+    @property
     def device_info(self):
         """Return device information about this entity."""
         datas = self.coordinator.entry.data

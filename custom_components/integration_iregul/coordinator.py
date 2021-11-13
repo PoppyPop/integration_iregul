@@ -8,10 +8,9 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .const import CONF_PASSWORD
+from .const import CONF_PASSWORD, DEFAULT_UPDATE_INTERVAL
 from .const import CONF_UPDATE_INTERVAL
 from .const import CONF_USERNAME
-from .const import DEFAULT_SCAN_INTERVAL
 from .const import DOMAIN
 from .const import LOGGER
 
@@ -24,10 +23,12 @@ class IRegulDataUpdateCoordinator(DataUpdateCoordinator):
 
         self.entry = entry
 
+        scan_interval = entry.options.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL)
+
         connOpt = aioiregul.ConnectionOptions(
             entry.data[CONF_USERNAME],
             entry.data[CONF_PASSWORD],
-            refresh_rate=timedelta(minutes=entry.data[CONF_UPDATE_INTERVAL]),
+            refresh_rate=timedelta(minutes=scan_interval),
         )
 
         self.session = async_create_clientsession(hass)
@@ -35,7 +36,10 @@ class IRegulDataUpdateCoordinator(DataUpdateCoordinator):
         self.iregul = aioiregul.Device(connOpt)
 
         super().__init__(
-            hass, LOGGER, name=DOMAIN, update_interval=DEFAULT_SCAN_INTERVAL
+            hass,
+            LOGGER,
+            name=DOMAIN,
+            update_interval=timedelta(minutes=scan_interval),
         )
 
     async def _async_update_data(self) -> dict:

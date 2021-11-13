@@ -11,9 +11,17 @@
     "step": {
       "user": {
         "data": {
-          "upd_int": "Délai de mise à jour (en minutes)",
           "password": "Mot de passe",
           "username": "Nom d'utilisateur"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "upd_int": "Délai de mise à jour (en minutes)"
         }
       }
     }
