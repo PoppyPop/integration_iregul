@@ -7,7 +7,7 @@ DOMAIN = "integration_iregul"
 CONF_USERNAME = "username"
 CONF_PASSWORD = "password"
 CONF_UPDATE_INTERVAL = "upd_int"
-DEFAULT_UPDATE_INTERVAL = 5
+DEFAULT_UPDATE_INTERVAL = 15
 
 LOGGER = logging.getLogger(__package__)
 

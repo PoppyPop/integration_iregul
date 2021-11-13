@@ -8,6 +8,7 @@ import aioiregul
 import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
 from .const import CONF_PASSWORD
 from .const import CONF_UPDATE_INTERVAL
@@ -39,8 +40,9 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     aioiregul.Device(connOpt)
 
     hub = aioiregul.Device(connOpt)
+    session = async_create_clientsession(hass)
 
-    if not await hub.authenticate():
+    if not await hub.authenticate(session):
         raise InvalidAuth
 
     # If you cannot connect:

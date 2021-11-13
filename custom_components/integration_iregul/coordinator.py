@@ -41,7 +41,7 @@ class IRegulDataUpdateCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> dict:
         """Fetch data from IRegul."""
         try:
-            return await self.iregul.collect(False, self.session)
+            return await self.iregul.collect(self.session, False)
 
         except aioiregul.CannotConnect:
             LOGGER.error("Could not connect")

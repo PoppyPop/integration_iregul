@@ -3,6 +3,8 @@ from typing import Callable
 from typing import Iterable
 
 from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import STATE_CLASS_MEASUREMENT
+from homeassistant.components.sensor import STATE_CLASS_TOTAL
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import DEVICE_CLASS_ENERGY
 from homeassistant.const import DEVICE_CLASS_POWER
@@ -12,8 +14,6 @@ from homeassistant.const import ENERGY_KILO_WATT_HOUR
 from homeassistant.const import POWER_KILO_WATT
 from homeassistant.const import POWER_WATT
 from homeassistant.const import PRESSURE_BAR
-from homeassistant.const import STATE_CLASS_MEASUREMENT
-from homeassistant.const import STATE_CLASS_TOTAL
 from homeassistant.const import TEMP_CELSIUS
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import Entity
@@ -76,7 +76,7 @@ class IRegulSensor(CoordinatorEntity, SensorEntity):
     @property
     def unique_id(self) -> str:
         """Return the unique ID for this entity."""
-        return self.slug
+        return self.coordinator.entry.data[CONF_USERNAME] + "-" + self.slug
 
     @property
     def device_info(self):
