@@ -5,7 +5,7 @@
   "documentation": "https://www.home-assistant.io/integrations/iregul",
   "issue_tracker": "https://github.com/PoppyPop/integration_iregul/issues",
   "requirements": ["aioiregul==0.1.3"],
-  "version": "0.0.9",
+  "version": "0.1.0",
   "ssdp": [],
   "zeroconf": [],
   "homekit": {},
