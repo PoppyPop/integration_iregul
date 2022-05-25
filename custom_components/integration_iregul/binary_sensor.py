@@ -76,7 +76,7 @@ class IRegulSensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         """Return True if the switch is on based on the state machine."""
-        return self.coordinator.data[self.group][self.slug].value.strip() == "1"
+        return self.coordinator.data[self.group][self.slug].value == 1
 
     @property
     def available(self) -> bool:
