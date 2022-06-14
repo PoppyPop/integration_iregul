@@ -32,6 +32,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             hass.config_entries.async_forward_entry_setup(entry, platform)
         )
 
+    async def handle_defrost(call):
+        """Handle the service call."""
+        await hass.data[DOMAIN][entry.entry_id].defrost()
+
+    hass.services.async_register(DOMAIN, "defrost", handle_defrost)
+
     return True
 
 
