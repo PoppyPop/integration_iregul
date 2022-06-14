@@ -43,6 +43,19 @@ class IRegulDataUpdateCoordinator(DataUpdateCoordinator):
             update_interval=timedelta(minutes=scan_interval),
         )
 
+    async def defrost(self) -> bool:
+        """Fetch data from IRegul."""
+        try:
+            return await self.iregul.defrost(self.session)
+
+        except aioiregul.CannotConnect:
+            LOGGER.error("Could not connect")
+            raise CannotConnect()
+
+        except aioiregul.InvalidAuth:
+            LOGGER.error("Invalid Auth")
+            raise InvalidAuth()
+
     async def _async_update_data(self) -> dict:
         """Fetch data from IRegul."""
         try:
