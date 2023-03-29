@@ -1,15 +1,11 @@
 {
   "domain": "integration_iregul",
   "name": "IRegul",
+  "codeowners": ["@PoppyPop"],
   "config_flow": true,
   "documentation": "https://www.home-assistant.io/integrations/iregul",
   "issue_tracker": "https://github.com/PoppyPop/integration_iregul/issues",
+  "iot_class": "cloud_polling",
   "requirements": ["aioiregul==0.1.4"],
-  "version": "0.1.2",
-  "ssdp": [],
-  "zeroconf": [],
-  "homekit": {},
-  "dependencies": [],
-  "codeowners": ["@PoppyPop"],
-  "iot_class": "cloud_polling"
+  "version": "0.1.2"
 }
