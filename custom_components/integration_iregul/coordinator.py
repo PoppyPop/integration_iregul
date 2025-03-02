@@ -1,4 +1,5 @@
 """DataUpdateCoordinator for the IRegul integration."""
+
 from datetime import timedelta
 
 import aioiregul

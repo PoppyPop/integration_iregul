@@ -1,4 +1,5 @@
 """Constants for the IRegul integration."""
+
 import logging
 
 DOMAIN = "integration_iregul"

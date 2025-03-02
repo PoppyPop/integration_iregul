@@ -1,4 +1,5 @@
 """Platform for sensor integration."""
+
 from typing import Callable
 from typing import Iterable
 
