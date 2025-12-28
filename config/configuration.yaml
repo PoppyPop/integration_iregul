@@ -11,6 +11,5 @@ logger:
   logs:
     custom_components.integration_iregul: debug
     aioiregul: debug
-
 # The integration is configured via UI (Config Flow).
 # After starting Home Assistant, add the integration from Settings → Devices & Services.

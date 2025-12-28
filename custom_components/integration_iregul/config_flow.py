@@ -33,7 +33,11 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     """Validate the user input. For now, basic validation only."""
     # In absence of a device to contact during config, accept inputs.
     # Future enhancement: instantiate client and test `get_data`.
-    if not data.get(CONF_HOST) or not data.get(CONF_DEVICE_ID) or not data.get(CONF_DEVICE_KEY):
+    if (
+        not data.get(CONF_HOST)
+        or not data.get(CONF_DEVICE_ID)
+        or not data.get(CONF_DEVICE_KEY)
+    ):
         raise InvalidAuth
     return {"title": "IRegul"}
 
