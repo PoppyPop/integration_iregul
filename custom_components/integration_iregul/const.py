@@ -2,15 +2,26 @@
 
 import logging
 
-from homeassistant.const import CONF_HOST as HA_CONF_HOST, CONF_PORT as HA_CONF_PORT
+from homeassistant.const import (
+    CONF_HOST as HA_CONF_HOST,
+    CONF_PASSWORD,
+    CONF_PORT as HA_CONF_PORT,
+)
 
 DOMAIN = "integration_iregul"
 
-# Connection details for aioiregul v2 client
+# Connection details for aioiregul client
 CONF_HOST = HA_CONF_HOST  # standard HA key
 CONF_PORT = HA_CONF_PORT  # standard HA key
-CONF_DEVICE_ID = "device_id"
-CONF_DEVICE_KEY = "device_key"
+CONF_SERIAL_NUMBER = "serial_number"
+CONF_API_VERSION = "api_version"
+API_VERSION_V1 = "v1"
+API_VERSION_V2 = "v2"
+DEFAULT_API_VERSION = API_VERSION_V2
+
+# The library expects a device id/key; keep aliases for compatibility across modules.
+CONF_DEVICE_ID = CONF_SERIAL_NUMBER
+CONF_DEVICE_KEY = CONF_PASSWORD
 
 # Options
 CONF_UPDATE_INTERVAL = "upd_int"

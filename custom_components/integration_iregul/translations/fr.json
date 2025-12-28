@@ -11,10 +11,13 @@
     "step": {
       "user": {
         "data": {
-          "host": "Hôte",
-          "port": "Port",
-          "device_id": "ID de l'appareil",
-          "device_key": "Clé de l'appareil"
+          "api_version": "Version de l'API",
+          "serial_number": "Numéro de série"
+        }
+      },
+      "credentials": {
+        "data": {
+          "password": "Mot de passe"
         }
       }
     }
@@ -23,7 +26,7 @@
     "step": {
       "init": {
         "data": {
-          "upd_int": "Délai de mise à jour (en minutes)"
+          "password": "Mot de passe"
         }
       }
     }

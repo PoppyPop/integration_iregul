@@ -7,37 +7,41 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.const import CONF_HOST, CONF_PORT
-from homeassistant.core import callback
-from homeassistant.core import HomeAssistant
+from homeassistant.const import CONF_PASSWORD
+from homeassistant.core import HomeAssistant, callback
 
-from .const import CONF_DEVICE_ID, CONF_DEVICE_KEY
-from .const import CONF_UPDATE_INTERVAL
-from .const import DEFAULT_UPDATE_INTERVAL
-from .const import DOMAIN
+from .const import (
+    API_VERSION_V1,
+    API_VERSION_V2,
+    CONF_API_VERSION,
+    CONF_DEVICE_ID,
+    CONF_DEVICE_KEY,
+    CONF_SERIAL_NUMBER,
+    DEFAULT_API_VERSION,
+    DOMAIN,
+)
 from .coordinator import CannotConnect, InvalidAuth
 
 _LOGGER = logging.getLogger(__name__)
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
-        CONF_HOST: str,
-        vol.Optional(CONF_PORT, default=80): int,
-        CONF_DEVICE_ID: str,
-        CONF_DEVICE_KEY: str,
+        vol.Required(CONF_API_VERSION, default=DEFAULT_API_VERSION): vol.In(
+            [API_VERSION_V1, API_VERSION_V2]
+        ),
+        vol.Required(CONF_SERIAL_NUMBER): str,
     }
 )
+
+STEP_CREDENTIALS_SCHEMA = vol.Schema({vol.Required(CONF_PASSWORD): str})
 
 
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
     """Validate the user input. For now, basic validation only."""
     # In absence of a device to contact during config, accept inputs.
     # Future enhancement: instantiate client and test `get_data`.
-    if (
-        not data.get(CONF_HOST)
-        or not data.get(CONF_DEVICE_ID)
-        or not data.get(CONF_DEVICE_KEY)
-    ):
+    device_id = data.get(CONF_DEVICE_ID) or data.get(CONF_SERIAL_NUMBER)
+    if not device_id or not data.get(CONF_DEVICE_KEY):
         raise InvalidAuth
     return {"title": "IRegul"}
 
@@ -46,6 +50,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for IRegul."""
 
     VERSION = 1
+
+    def __init__(self) -> None:
+        """Initialize config flow state."""
+        self._device_data: dict[str, Any] = {}
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -56,10 +64,31 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 step_id="user", data_schema=STEP_USER_DATA_SCHEMA
             )
 
+        self._device_data = user_input
+
+        await self.async_set_unique_id(user_input[CONF_SERIAL_NUMBER])
+        self._abort_if_unique_id_configured()
+
+        return await self.async_step_credentials()
+
+    async def async_step_credentials(
+        self, user_input: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        """Handle the credentials step."""
         errors: dict[str, str] = {}
 
+        if user_input is None:
+            return self.async_show_form(
+                step_id="credentials",
+                data_schema=STEP_CREDENTIALS_SCHEMA,
+            )
+
+        full_input = {**self._device_data, **user_input}
+        full_input[CONF_DEVICE_ID] = full_input.pop(CONF_SERIAL_NUMBER)
+        full_input[CONF_DEVICE_KEY] = full_input[CONF_PASSWORD]
+
         try:
-            info = await validate_input(self.hass, user_input)
+            info = await validate_input(self.hass, full_input)
         except CannotConnect:
             errors["base"] = "cannot_connect"
         except InvalidAuth:
@@ -68,13 +97,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             _LOGGER.exception("Unexpected exception")
             errors["base"] = "unknown"
         else:
-            # Avoid duplicates per device_id
-            await self.async_set_unique_id(user_input[CONF_DEVICE_ID])
-            self._abort_if_unique_id_configured()
-            return self.async_create_entry(title=info["title"], data=user_input)
+            return self.async_create_entry(title=info["title"], data=full_input)
 
         return self.async_show_form(
-            step_id="user", data_schema=STEP_USER_DATA_SCHEMA, errors=errors
+            step_id="credentials", data_schema=STEP_CREDENTIALS_SCHEMA, errors=errors
         )
 
     @staticmethod
@@ -94,19 +120,25 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
     async def async_step_init(self, user_input=None):
         """Handle options flow."""
         if user_input is not None:
+            new_data = {
+                **self.config_entry.data,
+                CONF_DEVICE_KEY: user_input[CONF_PASSWORD],
+            }
+            self.hass.config_entries.async_update_entry(
+                self.config_entry, data=new_data
+            )
             return self.async_create_entry(title="", data=user_input)
 
-        scan_interval = self.config_entry.options.get(
-            CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL
+        current_password = self.config_entry.options.get(
+            CONF_PASSWORD, self.config_entry.data.get(CONF_DEVICE_KEY, "")
         )
 
-        optSchem = vol.Schema(
-            {
-                vol.Optional(CONF_UPDATE_INTERVAL, default=scan_interval): int,
-            }
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {vol.Required(CONF_PASSWORD, default=current_password): str}
+            ),
         )
-
-        return self.async_show_form(step_id="init", data_schema=optSchem)
 
     async def async_step_abort(self, user_input=None):
         """Abort options flow."""

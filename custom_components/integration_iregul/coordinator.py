@@ -8,11 +8,16 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .const import CONF_DEVICE_ID, CONF_DEVICE_KEY, CONF_HOST, CONF_PORT
-from .const import CONF_UPDATE_INTERVAL
-from .const import DEFAULT_UPDATE_INTERVAL
-from .const import DOMAIN
-from .const import LOGGER
+from .const import (
+    CONF_DEVICE_ID,
+    CONF_DEVICE_KEY,
+    CONF_HOST,
+    CONF_PORT,
+    CONF_UPDATE_INTERVAL,
+    DEFAULT_UPDATE_INTERVAL,
+    DOMAIN,
+    LOGGER,
+)
 
 
 class IRegulDataUpdateCoordinator(DataUpdateCoordinator):
@@ -25,11 +30,13 @@ class IRegulDataUpdateCoordinator(DataUpdateCoordinator):
 
         scan_interval = entry.options.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL)
 
+        device_key = entry.options.get(CONF_DEVICE_KEY, entry.data.get(CONF_DEVICE_KEY))
+
         self.client = IRegulClient(
             host=entry.data.get(CONF_HOST),
             port=entry.data.get(CONF_PORT),
             device_id=entry.data.get(CONF_DEVICE_ID),
-            device_key=entry.data.get(CONF_DEVICE_KEY),
+            device_key=device_key,
             timeout=60.0,
         )
 
