@@ -2,16 +2,14 @@
 
 from datetime import timedelta
 
-import aioiregul
+from aioiregul.v2.client import IRegulClient
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .const import CONF_PASSWORD
+from .const import CONF_DEVICE_ID, CONF_DEVICE_KEY, CONF_HOST, CONF_PORT
 from .const import CONF_UPDATE_INTERVAL
-from .const import CONF_USERNAME
 from .const import DEFAULT_UPDATE_INTERVAL
 from .const import DOMAIN
 from .const import LOGGER
@@ -21,21 +19,19 @@ class IRegulDataUpdateCoordinator(DataUpdateCoordinator):
     """A IRegul Data Update Coordinator."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
-        """Initialize the IRegul hub."""
+        """Initialize the IRegul client and coordinator."""
 
         self.entry = entry
 
         scan_interval = entry.options.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL)
 
-        connOpt = aioiregul.ConnectionOptions(
-            entry.data[CONF_USERNAME],
-            entry.data[CONF_PASSWORD],
-            refresh_rate=timedelta(minutes=scan_interval),
+        self.client = IRegulClient(
+            host=entry.data.get(CONF_HOST),
+            port=entry.data.get(CONF_PORT),
+            device_id=entry.data.get(CONF_DEVICE_ID),
+            device_key=entry.data.get(CONF_DEVICE_KEY),
+            timeout=60.0,
         )
-
-        self.session = async_create_clientsession(hass)
-
-        self.iregul = aioiregul.Device(connOpt)
 
         super().__init__(
             hass,
@@ -45,30 +41,22 @@ class IRegulDataUpdateCoordinator(DataUpdateCoordinator):
         )
 
     async def defrost(self) -> bool:
-        """Fetch data from IRegul."""
+        """Trigger a defrost on the device."""
         try:
-            return await self.iregul.defrost(self.session)
+            return await self.hass.async_add_executor_job(self.client.defrost)
+        except Exception as err:  # pragma: no cover
+            LOGGER.error("Defrost failed: %s", err)
+            raise CannotConnect() from err
 
-        except aioiregul.CannotConnect:
-            LOGGER.error("Could not connect")
-            raise CannotConnect()
-
-        except aioiregul.InvalidAuth:
-            LOGGER.error("Invalid Auth")
-            raise InvalidAuth()
-
-    async def _async_update_data(self) -> dict:
-        """Fetch data from IRegul."""
+    async def _async_update_data(self):
+        """Fetch mapped data from IRegul."""
         try:
-            return await self.iregul.collect(self.session, False)
-
-        except aioiregul.CannotConnect:
-            LOGGER.error("Could not connect")
-            raise CannotConnect()
-
-        except aioiregul.InvalidAuth:
-            LOGGER.error("Invalid Auth")
-            raise InvalidAuth()
+            # IRegulClient is synchronous; run in executor
+            frame = await self.hass.async_add_executor_job(self.client.get_data)
+            return frame
+        except Exception as err:
+            LOGGER.error("Update failed: %s", err)
+            raise CannotConnect() from err
 
 
 class CannotConnect(HomeAssistantError):

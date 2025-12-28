@@ -1,7 +1,6 @@
-"""Platform for sensor integration."""
+"""Platform for binary sensor integration."""
 
-from typing import Callable
-from typing import Iterable
+from typing import Callable, Iterable
 
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.components.binary_sensor import DEVICE_CLASS_POWER
@@ -10,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONF_USERNAME
+from .const import CONF_DEVICE_ID
 from .const import DOMAIN
 from .const import REMOTE_INPUTS_ID
 from .coordinator import IRegulDataUpdateCoordinator
@@ -22,14 +21,12 @@ async def async_setup_entry(
     async_add_entities: Callable[[Iterable[Entity]], None],
 ) -> None:
     """Set up Verisure sensors based on a config entry."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
-
-    sensors: list[Entity] = [
-        IRegulSensor(coordinator, id, REMOTE_INPUTS_ID)
-        for id in coordinator.data[REMOTE_INPUTS_ID].keys()
+    coordinator: IRegulDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
+    inputs = getattr(coordinator.data, REMOTE_INPUTS_ID)
+    entities: list[Entity] = [
+        IRegulSensor(coordinator, idx, REMOTE_INPUTS_ID) for idx in inputs.keys()
     ]
-
-    async_add_entities(sensors)
+    async_add_entities(entities)
 
 
 class IRegulSensor(CoordinatorEntity, BinarySensorEntity):
@@ -48,13 +45,13 @@ class IRegulSensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def name(self) -> str:
         """Return the name of the entity."""
-        name = self.coordinator.data[self.group][self.slug].name
-        return name
+        obj = getattr(self.coordinator.data, self.group)[self.slug]
+        return getattr(obj, "alias", str(self.slug))
 
     @property
     def unique_id(self) -> str:
         """Return the unique ID for this entity."""
-        return self.coordinator.entry.data[CONF_USERNAME] + "-" + self.slug
+        return f"{self.coordinator.entry.data[CONF_DEVICE_ID]}-{self.group}-{self.slug}"
 
     @property
     def force_update(self) -> bool:
@@ -65,25 +62,25 @@ class IRegulSensor(CoordinatorEntity, BinarySensorEntity):
         """Return device information about this entity."""
 
         datas = self.coordinator.entry.data
-
         return {
-            "name": datas[CONF_USERNAME] + " " + self.group,
+            "name": f"{datas[CONF_DEVICE_ID]} {self.group}",
             "manufacturer": "IRegul",
             "model": self.group,
-            "identifiers": {(DOMAIN, self.group, datas[CONF_USERNAME])},
-            "via_device": (DOMAIN, datas[CONF_USERNAME]),
+            "identifiers": {(DOMAIN, self.group, datas[CONF_DEVICE_ID])},
+            "via_device": (DOMAIN, datas[CONF_DEVICE_ID]),
         }
 
     @property
     def is_on(self) -> bool:
         """Return True if the switch is on based on the state machine."""
-        return self.coordinator.data[self.group][self.slug].value == 1
+        obj = getattr(self.coordinator.data, self.group)[self.slug]
+        return getattr(obj, "valeur", 0) == 1
 
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        datas = self.coordinator.data
-        return super().available and (self.slug in datas[self.group])
+        datas = getattr(self.coordinator.data, self.group)
+        return super().available and (self.slug in datas)
 
     @property
     def device_class(self) -> str:

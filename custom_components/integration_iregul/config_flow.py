@@ -5,53 +5,36 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-import aioiregul
 import voluptuous as vol
 from homeassistant import config_entries
+from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.core import callback
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
-from .const import CONF_PASSWORD
+from .const import CONF_DEVICE_ID, CONF_DEVICE_KEY
 from .const import CONF_UPDATE_INTERVAL
-from .const import CONF_USERNAME
 from .const import DEFAULT_UPDATE_INTERVAL
 from .const import DOMAIN
-from .coordinator import CannotConnect
-from .coordinator import InvalidAuth
+from .coordinator import CannotConnect, InvalidAuth
 
 _LOGGER = logging.getLogger(__name__)
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
-        CONF_USERNAME: str,
-        CONF_PASSWORD: str,
+        CONF_HOST: str,
+        vol.Optional(CONF_PORT, default=80): int,
+        CONF_DEVICE_ID: str,
+        CONF_DEVICE_KEY: str,
     }
 )
 
 
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
-    """Validate the user input allows us to connect.
-
-    Data has the keys from STEP_USER_DATA_SCHEMA with values
-    provided by the user.
-    """
-
-    connOpt = aioiregul.ConnectionOptions(data[CONF_USERNAME], data[CONF_PASSWORD])
-    aioiregul.Device(connOpt)
-
-    hub = aioiregul.Device(connOpt)
-    session = async_create_clientsession(hass)
-
-    if not await hub.authenticate(session):
+    """Validate the user input. For now, basic validation only."""
+    # In absence of a device to contact during config, accept inputs.
+    # Future enhancement: instantiate client and test `get_data`.
+    if not data.get(CONF_HOST) or not data.get(CONF_DEVICE_ID) or not data.get(CONF_DEVICE_KEY):
         raise InvalidAuth
-
-    # If you cannot connect:
-    # throw CannotConnect
-    # If the authentication is wrong:
-    # InvalidAuth
-
-    # Return info that you want to store in the config entry.
     return {"title": "IRegul"}
 
 
@@ -59,7 +42,6 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for IRegul."""
 
     VERSION = 1
-    CONNECTION_CLASS = config_entries.CONN_CLASS_CLOUD_POLL
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -70,7 +52,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 step_id="user", data_schema=STEP_USER_DATA_SCHEMA
             )
 
-        errors = {}
+        errors: dict[str, str] = {}
 
         try:
             info = await validate_input(self.hass, user_input)
@@ -82,6 +64,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             _LOGGER.exception("Unexpected exception")
             errors["base"] = "unknown"
         else:
+            # Avoid duplicates per device_id
+            await self.async_set_unique_id(user_input[CONF_DEVICE_ID])
+            self._abort_if_unique_id_configured()
             return self.async_create_entry(title=info["title"], data=user_input)
 
         return self.async_show_form(

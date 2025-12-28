@@ -3,9 +3,10 @@
     "step": {
       "user": {
         "data": {
-          "upd_int": "[%key:common::config_flow::data::upd_int%]",
-          "username": "[%key:common::config_flow::data::username%]",
-          "password": "[%key:common::config_flow::data::password%]"
+          "host": "[%key:common::config_flow::data::host%]",
+          "port": "[%key:common::config_flow::data::port%]",
+          "device_id": "Device ID",
+          "device_key": "Device Key"
         }
       }
     },

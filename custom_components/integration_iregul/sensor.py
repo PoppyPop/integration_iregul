@@ -1,30 +1,28 @@
 """Platform for sensor integration."""
 
-from typing import Callable
-from typing import Iterable
+from typing import Callable, Iterable
 
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.components.sensor import STATE_CLASS_MEASUREMENT
-from homeassistant.components.sensor import STATE_CLASS_TOTAL
+from homeassistant.components.sensor import STATE_CLASS_MEASUREMENT, STATE_CLASS_TOTAL
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import DEVICE_CLASS_ENERGY
-from homeassistant.const import DEVICE_CLASS_POWER
-from homeassistant.const import DEVICE_CLASS_PRESSURE
-from homeassistant.const import DEVICE_CLASS_TEMPERATURE
-from homeassistant.const import ENERGY_KILO_WATT_HOUR
-from homeassistant.const import POWER_KILO_WATT
-from homeassistant.const import POWER_WATT
-from homeassistant.const import PRESSURE_BAR
-from homeassistant.const import TEMP_CELSIUS
+from homeassistant.const import (
+    DEVICE_CLASS_ENERGY,
+    DEVICE_CLASS_POWER,
+    DEVICE_CLASS_PRESSURE,
+    DEVICE_CLASS_TEMPERATURE,
+    ENERGY_KILO_WATT_HOUR,
+    POWER_KILO_WATT,
+    POWER_WATT,
+    PRESSURE_BAR,
+    TEMP_CELSIUS,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONF_USERNAME
+from .const import CONF_DEVICE_ID
 from .const import DOMAIN
-from .const import REMOTE_MEASURES_ID
-from .const import REMOTE_OUTPUTS_ID
-from .const import REMOTE_SENSORS_ID
+from .const import REMOTE_MEASUREMENTS_ID, REMOTE_OUTPUTS_ID, REMOTE_ANALOG_SENSORS_ID
 from .coordinator import IRegulDataUpdateCoordinator
 
 
@@ -34,23 +32,28 @@ async def async_setup_entry(
     async_add_entities: Callable[[Iterable[Entity]], None],
 ) -> None:
     """Set up Verisure sensors based on a config entry."""
-    datas = hass.data
-    coordinator: IRegulDataUpdateCoordinator = datas[DOMAIN][entry.entry_id]
+    coordinator: IRegulDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
-    sensors: list[Entity] = [
-        IRegulSensor(coordinator, id, REMOTE_SENSORS_ID)
-        for id in coordinator.data[REMOTE_SENSORS_ID].keys()
-    ]
+    frame = coordinator.data
+    sensors: list[Entity] = []
 
-    sensors.extend(
-        IRegulSensor(coordinator, id, REMOTE_MEASURES_ID)
-        for id in coordinator.data[REMOTE_MEASURES_ID].keys()
-    )
+    if hasattr(frame, REMOTE_ANALOG_SENSORS_ID):
+        sensors.extend(
+            IRegulSensor(coordinator, idx, REMOTE_ANALOG_SENSORS_ID)
+            for idx in getattr(frame, REMOTE_ANALOG_SENSORS_ID).keys()
+        )
 
-    sensors.extend(
-        IRegulSensor(coordinator, id, REMOTE_OUTPUTS_ID)
-        for id in coordinator.data[REMOTE_OUTPUTS_ID].keys()
-    )
+    if hasattr(frame, REMOTE_MEASUREMENTS_ID):
+        sensors.extend(
+            IRegulSensor(coordinator, idx, REMOTE_MEASUREMENTS_ID)
+            for idx in getattr(frame, REMOTE_MEASUREMENTS_ID).keys()
+        )
+
+    if hasattr(frame, REMOTE_OUTPUTS_ID):
+        sensors.extend(
+            IRegulSensor(coordinator, idx, REMOTE_OUTPUTS_ID)
+            for idx in getattr(frame, REMOTE_OUTPUTS_ID).keys()
+        )
 
     async_add_entities(sensors)
 
@@ -71,13 +74,14 @@ class IRegulSensor(CoordinatorEntity, SensorEntity):
     @property
     def name(self) -> str:
         """Return the name of the entity."""
-        name = self.coordinator.data[self.group][self.slug].name
-        return name
+        obj = getattr(self.coordinator.data, self.group)[self.slug]
+        # alias is the human-readable name
+        return getattr(obj, "alias", str(self.slug))
 
     @property
     def unique_id(self) -> str:
         """Return the unique ID for this entity."""
-        return self.coordinator.entry.data[CONF_USERNAME] + "-" + self.slug
+        return f"{self.coordinator.entry.data[CONF_DEVICE_ID]}-{self.group}-{self.slug}"
 
     @property
     def force_update(self) -> bool:
@@ -88,40 +92,42 @@ class IRegulSensor(CoordinatorEntity, SensorEntity):
         """Return device information about this entity."""
         datas = self.coordinator.entry.data
         return {
-            "name": datas[CONF_USERNAME] + " " + self.group,
+            "name": f"{datas[CONF_DEVICE_ID]} {self.group}",
             "manufacturer": "IRegul",
             "model": self.group,
-            "identifiers": {(DOMAIN, self.group, datas[CONF_USERNAME])},
-            "via_device": (DOMAIN, datas[CONF_USERNAME]),
+            "identifiers": {(DOMAIN, self.group, datas[CONF_DEVICE_ID])},
+            "via_device": (DOMAIN, datas[CONF_DEVICE_ID]),
         }
 
     @property
     def native_value(self) -> str:
         """Return the state of the entity."""
-        return self.coordinator.data[self.group][self.slug].value
+        obj = getattr(self.coordinator.data, self.group)[self.slug]
+        return getattr(obj, "valeur", None)
 
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        datas = self.coordinator.data
-        return super().available and self.slug in datas[self.group]
+        datas = getattr(self.coordinator.data, self.group)
+        return super().available and self.slug in datas
 
     @property
     def device_class(self) -> str:
         """Return the class of this entity."""
-        if self.coordinator.data[self.group][self.slug].unit == "°":
+        obj = getattr(self.coordinator.data, self.group)[self.slug]
+        if getattr(obj, "unit", "") == "°":
             return DEVICE_CLASS_TEMPERATURE
 
-        if self.coordinator.data[self.group][self.slug].unit == "bar":
+        if getattr(obj, "unit", "") == "bar":
             return DEVICE_CLASS_PRESSURE
 
-        if self.coordinator.data[self.group][self.slug].unit == "kWh":
+        if getattr(obj, "unit", "") == "kWh":
             return DEVICE_CLASS_ENERGY
 
-        if self.coordinator.data[self.group][self.slug].unit == "W":
+        if getattr(obj, "unit", "") == "W":
             return DEVICE_CLASS_POWER
 
-        if self.coordinator.data[self.group][self.slug].unit == "kW":
+        if getattr(obj, "unit", "") == "kW":
             return DEVICE_CLASS_POWER
 
         return None
@@ -130,13 +136,14 @@ class IRegulSensor(CoordinatorEntity, SensorEntity):
     def state_class(self):
         """Return the device class."""
 
-        if self.coordinator.data[self.group][self.slug].unit == "kWh":
+        obj = getattr(self.coordinator.data, self.group)[self.slug]
+        if getattr(obj, "unit", "") == "kWh":
             return STATE_CLASS_TOTAL
 
-        if self.coordinator.data[self.group][self.slug].unit == "W":
+        if getattr(obj, "unit", "") == "W":
             return STATE_CLASS_MEASUREMENT
 
-        if self.coordinator.data[self.group][self.slug].unit == "kW":
+        if getattr(obj, "unit", "") == "kW":
             return STATE_CLASS_MEASUREMENT
 
         return None
@@ -145,19 +152,19 @@ class IRegulSensor(CoordinatorEntity, SensorEntity):
     def native_unit_of_measurement(self) -> str:
         """Return the unit of measurement of this entity."""
 
-        if self.coordinator.data[self.group][self.slug].unit == "°":
+        obj = getattr(self.coordinator.data, self.group)[self.slug]
+        if getattr(obj, "unit", "") == "°":
             return TEMP_CELSIUS
 
-        if self.coordinator.data[self.group][self.slug].unit == "bar":
+        if getattr(obj, "unit", "") == "bar":
             return PRESSURE_BAR
 
-        if self.coordinator.data[self.group][self.slug].unit == "kWh":
+        if getattr(obj, "unit", "") == "kWh":
             return ENERGY_KILO_WATT_HOUR
 
-        if self.coordinator.data[self.group][self.slug].unit == "W":
+        if getattr(obj, "unit", "") == "W":
             return POWER_WATT
 
-        if self.coordinator.data[self.group][self.slug].unit == "kW":
+        if getattr(obj, "unit", "") == "kW":
             return POWER_KILO_WATT
-
-        return self.coordinator.data[self.group][self.slug].unit
+        return getattr(obj, "unit", None)
