@@ -1,27 +1,52 @@
 {
-  "image": "ghcr.io/ludeeus/devcontainer/integration:stable",
-  "name": "IRegul integration development",
-  "context": "..",
-  "appPort": ["9123:8123"],
-  "postCreateCommand": "container install",
-  "extensions": [
-    "ms-python.python",
-    "github.vscode-pull-request-github",
-    "ryanluker.vscode-coverage-gutters",
-    "ms-python.vscode-pylance"
-  ],
-  "settings": {
-    "files.eol": "\n",
-    "editor.tabSize": 4,
-    "terminal.integrated.shell.linux": "/bin/bash",
-    "python.pythonPath": "/usr/bin/python3",
-    "python.analysis.autoSearchPaths": false,
-    "python.linting.pylintEnabled": true,
-    "python.linting.enabled": true,
-    "python.formatting.provider": "black",
-    "editor.formatOnPaste": false,
-    "editor.formatOnSave": true,
-    "editor.formatOnType": true,
-    "files.trimTrailingWhitespace": true
+  "name": "PoppyPop/integration_iregul",
+  "image": "mcr.microsoft.com/devcontainers/python:3.13",
+  "forwardPorts": [8123],
+  "portsAttributes": {
+    "8123": {
+      "label": "Home Assistant",
+      "onAutoForward": "notify"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "charliermarsh.ruff",
+        "github.vscode-pull-request-github",
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ryanluker.vscode-coverage-gutters",
+        "redhat.vscode-yaml",
+        "esbenp.prettier-vscode",
+        "GitHub.vscode-pull-request-github",
+        "GitHub.copilot"
+      ],
+      "settings": {
+        "python.experiments.optOutFrom": ["pythonTestAdapter"],
+        "python.defaultInterpreterPath": ".venv/bin/python",
+        "python.pythonPath": ".venv/bin/python",
+        "python.terminal.activateEnvInCurrentTerminal": true,
+        "python.testing.pytestArgs": ["--no-cov"],
+        "pylint.importStrategy": "fromEnvironment",
+        "python.analysis.typeCheckingMode": "strict",
+        "editor.formatOnPaste": false,
+        "editor.formatOnSave": true,
+        "editor.formatOnType": true,
+        "files.trimTrailingWhitespace": true,
+        "[python]": {
+          "editor.defaultFormatter": "charliermarsh.ruff"
+        },
+        "[json][jsonc][yaml]": {
+          "editor.defaultFormatter": "esbenp.prettier-vscode"
+        }
+      }
+    }
+  },
+  "postCreateCommand": "pip install uv && uv sync --all-extras",
+  "remoteUser": "vscode",
+  "features": {
+    "ghcr.io/devcontainers-extra/features/apt-packages:1": {
+      "packages": "ffmpeg,libturbojpeg0,libpcap-dev"
+    }
   }
 }

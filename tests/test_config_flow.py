@@ -1,92 +1,100 @@
-"""Test the IRegul config flow."""
+"""Tests for the IRegul config flow."""
 
-from unittest.mock import patch
+from __future__ import annotations
 
+import pytest
+from custom_components.integration_iregul.const import (
+    API_VERSION_V1,
+    API_VERSION_V2,
+    CONF_API_VERSION,
+    CONF_DEVICE_ID,
+    CONF_DEVICE_PASSWORD,
+    CONF_SERIAL_NUMBER,
+    DOMAIN,
+)
 from homeassistant import config_entries
-from homeassistant import setup
-from homeassistant.components.iregul.config_flow import CannotConnect
-from homeassistant.components.iregul.config_flow import InvalidAuth
-from homeassistant.components.iregul.const import DOMAIN
-from homeassistant.core import HomeAssistant
+from homeassistant.const import CONF_PASSWORD
+from homeassistant.data_entry_flow import FlowResultType
+from pytest_homeassistant_custom_component.common import MockConfigEntry
+
+pytestmark = pytest.mark.asyncio
 
 
-async def test_form(hass: HomeAssistant) -> None:
-    """Test we get the form."""
-    await setup.async_setup_component(hass, "persistent_notification", {})
+async def test_full_user_flow(hass):
+    """Test going through the full two-step config flow."""
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
-    assert result["type"] == "form"
-    assert result["errors"] == {}
 
-    with patch(
-        "homeassistant.components.iregul.config_flow.PlaceholderHub.authenticate",
-        return_value=True,
-    ), patch(
-        "homeassistant.components.iregul.async_setup_entry",
-        return_value=True,
-    ) as mock_setup_entry:
-        result2 = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            {
-                "upd_int": "5",
-                "username": "test-username",
-                "password": "test-password",
-            },
-        )
-        await hass.async_block_till_done()
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "user"
 
-    assert result2["type"] == "create_entry"
-    assert result2["title"] == "Name of the device"
-    assert result2["data"] == {
-        "upd_int": "5",
-        "username": "test-username",
-        "password": "test-password",
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {CONF_API_VERSION: API_VERSION_V2, CONF_SERIAL_NUMBER: "SN123456"},
+    )
+
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "credentials"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {CONF_PASSWORD: "super-secret"},
+    )
+
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert result["title"] == "IRegul"
+    assert result["data"] == {
+        CONF_API_VERSION: API_VERSION_V2,
+        CONF_DEVICE_ID: "SN123456",
+        CONF_DEVICE_PASSWORD: "super-secret",
     }
-    assert len(mock_setup_entry.mock_calls) == 1
 
 
-async def test_form_invalid_auth(hass: HomeAssistant) -> None:
-    """Test we handle invalid auth."""
+async def test_duplicate_abort(hass):
+    """Test aborting the flow when the serial is already configured."""
+    existing = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_API_VERSION: API_VERSION_V1,
+            CONF_DEVICE_ID: "SN123456",
+            CONF_DEVICE_PASSWORD: "old-secret",
+        },
+        unique_id="SN123456",
+    )
+    existing.add_to_hass(hass)
+
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
 
-    with patch(
-        "homeassistant.components.iregul.config_flow.PlaceholderHub.authenticate",
-        side_effect=InvalidAuth,
-    ):
-        result2 = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            {
-                "upd_int": "5",
-                "username": "test-username",
-                "password": "test-password",
-            },
-        )
-
-    assert result2["type"] == "form"
-    assert result2["errors"] == {"base": "invalid_auth"}
+    assert result["type"] == FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
 
 
-async def test_form_cannot_connect(hass: HomeAssistant) -> None:
-    """Test we handle cannot connect error."""
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": config_entries.SOURCE_USER}
+async def test_options_flow_updates_password(hass):
+    """Test updating the password through the options flow."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_API_VERSION: API_VERSION_V2,
+            CONF_DEVICE_ID: "SN123456",
+            CONF_DEVICE_PASSWORD: "old-secret",
+        },
     )
+    entry.add_to_hass(hass)
 
-    with patch(
-        "homeassistant.components.iregul.config_flow.PlaceholderHub.authenticate",
-        side_effect=CannotConnect,
-    ):
-        result2 = await hass.config_entries.flow.async_configure(
-            result["flow_id"],
-            {
-                "upd_int": "5",
-                "username": "test-username",
-                "password": "test-password",
-            },
-        )
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    assert result["type"] == FlowResultType.FORM
+    assert result["step_id"] == "init"
 
-    assert result2["type"] == "form"
-    assert result2["errors"] == {"base": "cannot_connect"}
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {CONF_PASSWORD: "new-secret"},
+    )
+    await hass.async_block_till_done()
+
+    assert result["type"] == FlowResultType.CREATE_ENTRY
+    assert result["data"] == {CONF_PASSWORD: "new-secret"}
+    assert entry.options[CONF_PASSWORD] == "new-secret"
+    assert entry.data[CONF_DEVICE_PASSWORD] == "new-secret"

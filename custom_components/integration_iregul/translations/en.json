@@ -11,8 +11,13 @@
     "step": {
       "user": {
         "data": {
-          "password": "Password",
-          "username": "Username"
+          "api_version": "API version",
+          "serial_number": "Serial number"
+        }
+      },
+      "credentials": {
+        "data": {
+          "password": "Password"
         }
       }
     }
@@ -21,8 +26,16 @@
     "step": {
       "init": {
         "data": {
-          "upd_int": "Update delay (in minutes)"
+          "password": "Password",
+          "upd_int": "Update interval (minutes)"
         }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "last_message_received": {
+        "name": "Last message received"
       }
     }
   }

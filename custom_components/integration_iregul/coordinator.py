@@ -1,79 +1,103 @@
-"""DataUpdateCoordinator for the IRegul integration."""
+"""Coordinator for IRegul integration."""
 
+from __future__ import annotations
+
+import logging
 from datetime import timedelta
+from types import MappingProxyType
+from typing import Any
 
-import aioiregul
-from homeassistant.config_entries import ConfigEntry
+from aioiregul.iregulapi import IRegulApiInterface
+from aioiregul.models import MappedFrame
+from aioiregul.v1 import Device
+from aioiregul.v2.client import IRegulClient
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import CONF_PASSWORD
-from .const import CONF_UPDATE_INTERVAL
-from .const import CONF_USERNAME
-from .const import DEFAULT_UPDATE_INTERVAL
-from .const import DOMAIN
-from .const import LOGGER
+from .const import (
+    API_VERSION_V1,
+    API_VERSION_V2,
+    CONF_API_VERSION,
+    CONF_DEVICE_ID,
+    CONF_DEVICE_PASSWORD,
+    CONF_UPDATE_INTERVAL,
+    DEFAULT_UPDATE_INTERVAL,
+    DOMAIN,
+)
+
+_LOGGER = logging.getLogger(__name__)
 
 
-class IRegulDataUpdateCoordinator(DataUpdateCoordinator):
-    """A IRegul Data Update Coordinator."""
+class CannotConnect(Exception):
+    """Error to indicate we cannot connect to the device."""
 
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
-        """Initialize the IRegul hub."""
 
-        self.entry = entry
+class InvalidAuth(Exception):
+    """Error to indicate there is invalid authentication."""
 
-        scan_interval = entry.options.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL)
 
-        connOpt = aioiregul.ConnectionOptions(
-            entry.data[CONF_USERNAME],
-            entry.data[CONF_PASSWORD],
-            refresh_rate=timedelta(minutes=scan_interval),
-        )
+class IRegulCoordinator(DataUpdateCoordinator[MappedFrame]):
+    """Coordinator for IRegul integration."""
 
-        self.session = async_create_clientsession(hass)
-
-        self.iregul = aioiregul.Device(connOpt)
-
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        data: MappingProxyType[str, Any],
+    ) -> None:
+        """Initialize the coordinator."""
         super().__init__(
             hass,
-            LOGGER,
+            _LOGGER,
             name=DOMAIN,
-            update_interval=timedelta(minutes=scan_interval),
+            update_interval=timedelta(
+                minutes=data.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL)
+            ),
+        )
+        self.hass = hass
+        self.data_config = data
+        self.client: IRegulApiInterface | None = None
+        self._api_version = data.get(CONF_API_VERSION, API_VERSION_V2)
+
+    @staticmethod
+    def create_client(
+        hass: HomeAssistant,
+        device_id: str,
+        password: str,
+        api_version: str = API_VERSION_V2,
+    ) -> IRegulApiInterface:
+        """Create an API client based on the API version."""
+        if api_version == API_VERSION_V1:
+            return Device(
+                http_session=async_create_clientsession(hass),
+                device_id=device_id,
+                password=password,
+            )
+        return IRegulClient(
+            device_id=device_id,
+            password=password,
         )
 
-    async def defrost(self) -> bool:
-        """Fetch data from IRegul."""
+    async def async_setup(self) -> None:
+        """Set up the coordinator by initializing the API client."""
+        self.client = self.create_client(
+            self.hass,
+            self.data_config[CONF_DEVICE_ID],
+            self.data_config[CONF_DEVICE_PASSWORD],
+            self._api_version,
+        )
+
+    async def _async_update_data(self) -> MappedFrame:
+        """Fetch data from the API."""
+        if self.client is None:
+            raise UpdateFailed("Client not initialized")
+
         try:
-            return await self.iregul.defrost(self.session)
+            data = await self.client.get_data()
 
-        except aioiregul.CannotConnect:
-            LOGGER.error("Could not connect")
-            raise CannotConnect()
+            if not data:
+                raise UpdateFailed("No data received from device")
 
-        except aioiregul.InvalidAuth:
-            LOGGER.error("Invalid Auth")
-            raise InvalidAuth()
-
-    async def _async_update_data(self) -> dict:
-        """Fetch data from IRegul."""
-        try:
-            return await self.iregul.collect(self.session, False)
-
-        except aioiregul.CannotConnect:
-            LOGGER.error("Could not connect")
-            raise CannotConnect()
-
-        except aioiregul.InvalidAuth:
-            LOGGER.error("Invalid Auth")
-            raise InvalidAuth()
-
-
-class CannotConnect(HomeAssistantError):
-    """Error to indicate we cannot connect."""
-
-
-class InvalidAuth(HomeAssistantError):
-    """Error to indicate there is invalid auth."""
+            return data
+        except Exception as err:
+            raise UpdateFailed(f"Error communicating with API: {err}") from err
