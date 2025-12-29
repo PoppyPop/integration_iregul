@@ -4,7 +4,11 @@ import logging
 
 from homeassistant.const import (
     CONF_HOST as HA_CONF_HOST,
+)
+from homeassistant.const import (
     CONF_PASSWORD,
+)
+from homeassistant.const import (
     CONF_PORT as HA_CONF_PORT,
 )
 
@@ -21,7 +25,7 @@ DEFAULT_API_VERSION = API_VERSION_V2
 
 # The library expects a device id/key; keep aliases for compatibility across modules.
 CONF_DEVICE_ID = CONF_SERIAL_NUMBER
-CONF_DEVICE_KEY = CONF_PASSWORD
+CONF_DEVICE_PASSWORD = CONF_PASSWORD
 
 # Options
 CONF_UPDATE_INTERVAL = "upd_int"

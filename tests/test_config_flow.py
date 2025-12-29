@@ -3,11 +3,6 @@
 from __future__ import annotations
 
 import pytest
-from homeassistant import config_entries
-from homeassistant.const import CONF_PASSWORD
-from homeassistant.data_entry_flow import FlowResultType
-from pytest_homeassistant_custom_component.common import MockConfigEntry
-
 from custom_components.integration_iregul.const import (
     API_VERSION_V1,
     API_VERSION_V2,
@@ -17,6 +12,10 @@ from custom_components.integration_iregul.const import (
     CONF_SERIAL_NUMBER,
     DOMAIN,
 )
+from homeassistant import config_entries
+from homeassistant.const import CONF_PASSWORD
+from homeassistant.data_entry_flow import FlowResultType
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 pytestmark = pytest.mark.asyncio
 

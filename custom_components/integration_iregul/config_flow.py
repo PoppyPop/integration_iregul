@@ -15,7 +15,7 @@ from .const import (
     API_VERSION_V2,
     CONF_API_VERSION,
     CONF_DEVICE_ID,
-    CONF_DEVICE_KEY,
+    CONF_DEVICE_PASSWORD,
     CONF_SERIAL_NUMBER,
     DEFAULT_API_VERSION,
     DOMAIN,
@@ -41,7 +41,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
     # In absence of a device to contact during config, accept inputs.
     # Future enhancement: instantiate client and test `get_data`.
     device_id = data.get(CONF_DEVICE_ID) or data.get(CONF_SERIAL_NUMBER)
-    if not device_id or not data.get(CONF_DEVICE_KEY):
+    if not device_id or not data.get(CONF_DEVICE_PASSWORD):
         raise InvalidAuth
     return {"title": "IRegul"}
 
@@ -57,12 +57,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
-    ) -> dict[str, Any]:
+    ) -> config_entries.ConfigFlowResult:
         """Handle the initial step."""
         if user_input is None:
-            return self.async_show_form(
-                step_id="user", data_schema=STEP_USER_DATA_SCHEMA
-            )
+            return self.async_show_form(step_id="user", data_schema=STEP_USER_DATA_SCHEMA)
 
         self._device_data = user_input
 
@@ -73,7 +71,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_credentials(
         self, user_input: dict[str, Any] | None = None
-    ) -> dict[str, Any]:
+    ) -> config_entries.ConfigFlowResult:
         """Handle the credentials step."""
         errors: dict[str, str] = {}
 
@@ -85,7 +83,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         full_input = {**self._device_data, **user_input}
         full_input[CONF_DEVICE_ID] = full_input.pop(CONF_SERIAL_NUMBER)
-        full_input[CONF_DEVICE_KEY] = full_input[CONF_PASSWORD]
+        full_input[CONF_DEVICE_PASSWORD] = full_input[CONF_PASSWORD]
 
         try:
             info = await validate_input(self.hass, full_input)
@@ -105,7 +103,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry):
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry[Any],
+    ) -> config_entries.OptionsFlow:
         """Get the options flow for this handler."""
         return OptionsFlowHandler(config_entry)
 
@@ -113,33 +113,28 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class OptionsFlowHandler(config_entries.OptionsFlow):
     """Handle a option flow for iregul."""
 
-    def __init__(self, config_entry: config_entries.ConfigEntry):
+    def __init__(self, config_entry: config_entries.ConfigEntry[Any]) -> None:
         """Initialize options flow."""
-        self.config_entry = config_entry
 
-    async def async_step_init(self, user_input=None):
+    async def async_step_init(self, user_input: dict[str, Any] | None = None):
         """Handle options flow."""
         if user_input is not None:
             new_data = {
                 **self.config_entry.data,
-                CONF_DEVICE_KEY: user_input[CONF_PASSWORD],
+                CONF_DEVICE_PASSWORD: user_input[CONF_PASSWORD],
             }
-            self.hass.config_entries.async_update_entry(
-                self.config_entry, data=new_data
-            )
+            self.hass.config_entries.async_update_entry(self.config_entry, data=new_data)
             return self.async_create_entry(title="", data=user_input)
 
         current_password = self.config_entry.options.get(
-            CONF_PASSWORD, self.config_entry.data.get(CONF_DEVICE_KEY, "")
+            CONF_PASSWORD, self.config_entry.data.get(CONF_DEVICE_PASSWORD, "")
         )
 
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema(
-                {vol.Required(CONF_PASSWORD, default=current_password): str}
-            ),
+            data_schema=vol.Schema({vol.Required(CONF_PASSWORD, default=current_password): str}),
         )
 
-    async def async_step_abort(self, user_input=None):
+    async def async_step_abort(self, user_input: dict[str, Any] | None = None):
         """Abort options flow."""
         return self.async_create_entry(title="", data=self.config_entry.options)

@@ -181,3 +181,9 @@ $RECYCLE.BIN/
 d2utmp*
 *.old
 *.new
+
+# Home Assistant config: ignore everything except configuration.yaml
+config/**
+!config/configuration.yaml
+
+typings/
