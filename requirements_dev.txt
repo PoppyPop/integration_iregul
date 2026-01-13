@@ -3,4 +3,4 @@ pre-commit
 black
 flake8
 reorder-python-imports
-aioiregul==0.2.1
+aioiregul==0.2.4
