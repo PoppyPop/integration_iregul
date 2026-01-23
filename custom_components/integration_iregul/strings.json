@@ -3,8 +3,12 @@
     "step": {
       "user": {
         "data": {
-          "upd_int": "[%key:common::config_flow::data::upd_int%]",
-          "username": "[%key:common::config_flow::data::username%]",
+          "api_version": "API version",
+          "serial_number": "Serial number"
+        }
+      },
+      "credentials": {
+        "data": {
           "password": "[%key:common::config_flow::data::password%]"
         }
       }
@@ -16,6 +20,23 @@
     },
     "abort": {
       "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "password": "[%key:common::config_flow::data::password%]",
+          "upd_int": "Update interval (minutes)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "last_message_received": {
+        "name": "Last message received"
+      }
     }
   }
 }

@@ -1,0 +1,15 @@
+# Minimal Home Assistant configuration for debugging the IRegul integration
+homeassistant:
+  name: IRegul Dev
+
+# Enable default set of integrations
+default_config:
+
+# Logger: debug our custom integration and library
+logger:
+  default: warning
+  logs:
+    custom_components.integration_iregul: debug
+    aioiregul: debug
+# The integration is configured via UI (Config Flow).
+# After starting Home Assistant, add the integration from Settings → Devices & Services.

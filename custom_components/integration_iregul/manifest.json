@@ -6,6 +6,6 @@
   "documentation": "https://github.com/PoppyPop/integration_iregul/wiki",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/PoppyPop/integration_iregul/issues",
-  "requirements": ["aioiregul==0.1.4"],
-  "version": "0.1.2"
+  "requirements": ["aioiregul==0.2.4"],
+  "version": "0.2.3"
 }
