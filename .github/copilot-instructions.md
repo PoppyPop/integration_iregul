@@ -68,6 +68,7 @@ rules:
   - f-strings (preferred over `%` or `.format()`)
   - Dataclasses
   - Walrus operator
+- Use `uv run` to execute commands in the correct Python environment
 
 ### Strict Typing (Platinum)
 
