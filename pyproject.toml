@@ -71,6 +71,9 @@ venv = ".venv"
 typeCheckingMode = "strict"
 reportMissingTypeStubs = "warning"
 
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+
 [dependency-groups]
 dev = [
     # Testing

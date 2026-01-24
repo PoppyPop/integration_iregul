@@ -1,6 +1,6 @@
 {
   "name": "PoppyPop/integration_iregul",
-  "image": "mcr.microsoft.com/devcontainers/python:3.13",
+  "image": "mcr.microsoft.com/devcontainers/python:3.14",
   "forwardPorts": [8123],
   "portsAttributes": {
     "8123": {
@@ -45,6 +45,7 @@
   "postCreateCommand": "pip install uv && uv sync --all-extras",
   "remoteUser": "vscode",
   "features": {
+    "ghcr.io/devcontainers/features/rust:1": {},
     "ghcr.io/devcontainers-extra/features/apt-packages:1": {
       "packages": "ffmpeg,libturbojpeg0,libpcap-dev"
     }
