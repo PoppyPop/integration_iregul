@@ -2,7 +2,7 @@ name: CI
 
 on:
   pull_request:
-    branches: [master]
+    branches: [main]
 
 env:
   DEFAULT_PYTHON: 3.13
