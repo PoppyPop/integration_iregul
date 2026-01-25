@@ -398,6 +398,13 @@ class IRegulInputSensor(IRegulSensor):
         self._attr_name = input_sensor.alias or f"Input {input_sensor.index}"
         self._attr_native_value = input_sensor.valeur
 
+        # Type 2 inputs are always percentage measurements
+        if input_sensor.type == 2:
+            device_class, state_class, unit_of_measurement = get_unit_config("%")
+            self._attr_device_class = device_class
+            self._attr_state_class = state_class
+            self._attr_native_unit_of_measurement = unit_of_measurement
+
 
 class IRegulOutputSensor(IRegulSensor):
     """Representation of an IRegul output sensor."""
@@ -423,6 +430,13 @@ class IRegulOutputSensor(IRegulSensor):
         """Refresh attributes from the latest output."""
         self._attr_name = output_sensor.alias or f"Output {output_sensor.index}"
         self._attr_native_value = output_sensor.valeur
+
+        # Type 2 outputs are always percentage measurements
+        if output_sensor.type == 2:
+            device_class, state_class, unit_of_measurement = get_unit_config("%")
+            self._attr_device_class = device_class
+            self._attr_state_class = state_class
+            self._attr_native_unit_of_measurement = unit_of_measurement
 
 
 class IRegulAnalogSensorSensor(IRegulSensor):
