@@ -104,6 +104,14 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         full_input[CONF_DEVICE_ID] = full_input.pop(CONF_SERIAL_NUMBER)
         full_input[CONF_DEVICE_PASSWORD] = full_input[CONF_PASSWORD]
 
+        # Set default update interval based on API version
+        api_version = full_input.get(CONF_API_VERSION, API_VERSION_V2)
+        full_input[CONF_UPDATE_INTERVAL] = (
+            DEFAULT_UPDATE_INTERVAL_V1
+            if api_version == API_VERSION_V1
+            else DEFAULT_UPDATE_INTERVAL_V2
+        )
+
         try:
             info = await validate_input(self.hass, full_input)
         except CannotConnect:
@@ -145,7 +153,14 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 CONF_UPDATE_INTERVAL: user_input[CONF_UPDATE_INTERVAL],
             }
             self.hass.config_entries.async_update_entry(self.config_entry, data=new_data)
-            return self.async_create_entry(title="", data=user_input)
+            await self.hass.config_entries.async_reload(self.config_entry.entry_id)
+            return self.async_create_entry(
+                title="",
+                data={
+                    CONF_PASSWORD: user_input[CONF_PASSWORD],
+                    CONF_UPDATE_INTERVAL: user_input[CONF_UPDATE_INTERVAL],
+                },
+            )
 
         current_password = self.config_entry.options.get(
             CONF_PASSWORD, self.config_entry.data.get(CONF_DEVICE_PASSWORD, "")

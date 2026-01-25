@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import timedelta
+from datetime import datetime, timedelta
 from types import MappingProxyType
 from typing import Any
 
@@ -14,6 +14,7 @@ from aioiregul.v2.client import IRegulClient
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 from .const import (
     API_VERSION_V1,
@@ -58,6 +59,7 @@ class IRegulCoordinator(DataUpdateCoordinator[MappedFrame]):
         self.data_config = data
         self.client: IRegulApiInterface | None = None
         self._api_version = data.get(CONF_API_VERSION, API_VERSION_V2)
+        self._last_update_success: datetime | None = None
 
     @staticmethod
     def create_client(
@@ -98,6 +100,26 @@ class IRegulCoordinator(DataUpdateCoordinator[MappedFrame]):
             if not data:
                 raise UpdateFailed("No data received from device")
 
+            self._last_update_success = dt_util.as_utc(data.timestamp)
+
             return data
         except Exception as err:
             raise UpdateFailed(f"Error communicating with API: {err}") from err
+
+    def is_data_stale(self, stale_minutes: int = 16) -> bool:
+        """Check if data is stale (no successful update for specified minutes).
+
+        Args:
+            stale_minutes: Number of minutes after which data is considered stale.
+                          Defaults to 16 minutes.
+
+        Returns:
+            True if no successful update has occurred or if the time since last
+            successful update exceeds stale_minutes.
+        """
+        if self._last_update_success is None:
+            return False  # No updates yet, consider data not stale
+
+        now = dt_util.now()
+        elapsed = now - self._last_update_success
+        return elapsed > timedelta(minutes=stale_minutes)
