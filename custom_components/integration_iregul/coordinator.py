@@ -100,7 +100,8 @@ class IRegulCoordinator(DataUpdateCoordinator[MappedFrame]):
             if not data:
                 raise UpdateFailed("No data received from device")
 
-            self._last_update_success = data.timestamp
+            self._last_update_success = dt_util.as_utc(data.timestamp)
+
             return data
         except Exception as err:
             raise UpdateFailed(f"Error communicating with API: {err}") from err
