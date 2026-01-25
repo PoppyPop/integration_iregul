@@ -154,7 +154,13 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             }
             self.hass.config_entries.async_update_entry(self.config_entry, data=new_data)
             await self.hass.config_entries.async_reload(self.config_entry.entry_id)
-            return self.async_create_entry(title="", data={})
+            return self.async_create_entry(
+                title="",
+                data={
+                    CONF_PASSWORD: user_input[CONF_PASSWORD],
+                    CONF_UPDATE_INTERVAL: user_input[CONF_UPDATE_INTERVAL],
+                },
+            )
 
         current_password = self.config_entry.options.get(
             CONF_PASSWORD, self.config_entry.data.get(CONF_DEVICE_PASSWORD, "")

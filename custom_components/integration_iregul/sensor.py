@@ -248,14 +248,15 @@ class IRegulSensor(CoordinatorEntity[IRegulCoordinator], SensorEntity):
         """Return the mapping of items for this sensor type."""
         return getattr(self.coordinator.data, self._item_key)
 
-    @property
-    def available(self) -> bool:
-        """Return true if the item is available in coordinator data."""
-        return super().available and self._item_id in self._get_items()
-
     @callback
     def _handle_coordinator_update(self) -> None:
         """Handle updated data from the coordinator."""
+        # Check if data is stale - if so, mark unavailable without updating
+        if self.coordinator.is_data_stale():
+            self._attr_available = False
+            self.async_write_ha_state()
+            return
+
         items = self._get_items()
         item = items.get(self._item_id)
         if item is None:

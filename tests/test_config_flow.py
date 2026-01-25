@@ -13,6 +13,7 @@ from custom_components.integration_iregul.const import (
     CONF_DEVICE_PASSWORD,
     CONF_SERIAL_NUMBER,
     CONF_UPDATE_INTERVAL,
+    DEFAULT_UPDATE_INTERVAL_V2,
     DOMAIN,
 )
 from homeassistant import config_entries
@@ -41,7 +42,10 @@ async def test_full_user_flow(hass):
 
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            {CONF_API_VERSION: API_VERSION_V2, CONF_SERIAL_NUMBER: "SN123456"},
+            {
+                CONF_API_VERSION: API_VERSION_V2,
+                CONF_SERIAL_NUMBER: "SN123456",
+            },
         )
 
         assert result["type"] == FlowResultType.FORM
@@ -58,6 +62,7 @@ async def test_full_user_flow(hass):
             CONF_API_VERSION: API_VERSION_V2,
             CONF_DEVICE_ID: "SN123456",
             CONF_DEVICE_PASSWORD: "super-secret",
+            CONF_UPDATE_INTERVAL: DEFAULT_UPDATE_INTERVAL_V2,
         }
 
 
