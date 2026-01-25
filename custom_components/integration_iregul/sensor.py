@@ -16,6 +16,7 @@ from homeassistant.components.sensor import (
     SensorEntity,
 )
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import PERCENTAGE
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import EntityCategory
@@ -275,6 +276,21 @@ class IRegulSensor(CoordinatorEntity[IRegulCoordinator], SensorEntity):
         """
         raise NotImplementedError
 
+    def _apply_type_unit_config(self, sensor_type: int | None) -> None:
+        """Apply unit configuration based on sensor type.
+
+        Type 2: percentage measurements
+        Type 3: default unit config
+        """
+        if sensor_type is None or sensor_type not in (2, 3):
+            return
+
+        unit = PERCENTAGE if sensor_type == 2 else None
+        device_class, state_class, unit_of_measurement = get_unit_config(unit)
+        self._attr_device_class = device_class
+        self._attr_state_class = state_class
+        self._attr_native_unit_of_measurement = unit_of_measurement
+
 
 class IRegulMeasurementSensor(IRegulSensor):
     """Representation of an IRegul measurement sensor."""
@@ -397,13 +413,7 @@ class IRegulInputSensor(IRegulSensor):
         """Refresh attributes from the latest input."""
         self._attr_name = input_sensor.alias or f"Input {input_sensor.index}"
         self._attr_native_value = input_sensor.valeur
-
-        # Type 2 inputs are always percentage measurements
-        if input_sensor.type == 2:
-            device_class, state_class, unit_of_measurement = get_unit_config("%")
-            self._attr_device_class = device_class
-            self._attr_state_class = state_class
-            self._attr_native_unit_of_measurement = unit_of_measurement
+        self._apply_type_unit_config(input_sensor.type)
 
 
 class IRegulOutputSensor(IRegulSensor):
@@ -430,13 +440,7 @@ class IRegulOutputSensor(IRegulSensor):
         """Refresh attributes from the latest output."""
         self._attr_name = output_sensor.alias or f"Output {output_sensor.index}"
         self._attr_native_value = output_sensor.valeur
-
-        # Type 2 outputs are always percentage measurements
-        if output_sensor.type == 2:
-            device_class, state_class, unit_of_measurement = get_unit_config("%")
-            self._attr_device_class = device_class
-            self._attr_state_class = state_class
-            self._attr_native_unit_of_measurement = unit_of_measurement
+        self._apply_type_unit_config(output_sensor.type)
 
 
 class IRegulAnalogSensorSensor(IRegulSensor):
