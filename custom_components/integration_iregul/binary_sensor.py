@@ -6,12 +6,10 @@ from aioiregul.models import AnalogSensor, Input, Output
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONF_DEVICE_ID, DOMAIN
 from .coordinator import IRegulCoordinator
+from .entity import IRegulEntity
 
 
 async def async_setup_entry(
@@ -88,58 +86,8 @@ async def async_setup_entry(
     entry.async_on_unload(coordinator.async_add_listener(_async_add_new_entities))
 
 
-class IRegulBinarySensor(CoordinatorEntity[IRegulCoordinator], BinarySensorEntity):
+class IRegulBinarySensor(IRegulEntity, BinarySensorEntity):
     """Base binary sensor for IRegul data with shared behavior."""
-
-    _attr_has_entity_name = True
-
-    def __init__(
-        self,
-        *,
-        coordinator: IRegulCoordinator,
-        entry: ConfigEntry,
-        item_index: int,
-        item_key: str,
-        unique_prefix: str,
-    ) -> None:
-        """Initialize the base binary sensor."""
-        super().__init__(coordinator)
-        self._entry = entry
-        self._item_id = item_index
-        self._item_key = item_key
-
-        device_id = entry.data[CONF_DEVICE_ID]
-        self._attr_unique_id = f"{device_id}_{unique_prefix}_{item_index}"
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, device_id)},
-            name=entry.title,
-            manufacturer="IRegul",
-            serial_number=device_id,
-        )
-
-    def _get_items(self) -> dict[int, object]:
-        """Return the mapping of items for this sensor type."""
-        return getattr(self.coordinator.data, self._item_key)
-
-    @callback
-    def _handle_coordinator_update(self) -> None:
-        """Handle updated data from the coordinator."""
-        # Check if data is stale - if so, mark unavailable without updating
-        if self.coordinator.is_data_stale():
-            self._attr_available = False
-            self.async_write_ha_state()
-            return
-
-        items = self._get_items()
-        item = items.get(self._item_id)
-        if item is None:
-            self._attr_available = False
-            self.async_write_ha_state()
-            return
-
-        self._attr_available = True
-        self._update(item)
-        self.async_write_ha_state()
 
     def _update(self, item: object) -> None:
         """Update entity attributes from the item.
