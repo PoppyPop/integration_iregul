@@ -14,7 +14,7 @@ authors = [
 ]
 keywords = ["iregul", "async", "api", "home-automation"]
 dependencies = [
-  "homeassistant==2026.2.0",
+  "homeassistant==2026.2.1",
   "aioiregul==0.2.5",
 ]
 
