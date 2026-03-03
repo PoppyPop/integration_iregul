@@ -165,7 +165,7 @@ wheels = [
 
 [[package]]
 name = "aioiregul"
-version = "0.2.5"
+version = "0.2.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -173,9 +173,9 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "python-slugify" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/02/fb/2c69fb41d0c62b20c24eda2e3a9320f36a598db4b8ae2a6bd154d62ece1e/aioiregul-0.2.5.tar.gz", hash = "sha256:44847e4df483af76de6b1d616ae7451fd5b72879d83ff5ab5ee3c287422c98af", size = 135099, upload-time = "2026-01-23T20:48:00.368Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/6f/51/996678f39e818a8bac1dd13de39fc7b77122bbc08c9107184f3eaa53383b/aioiregul-0.2.6.tar.gz", hash = "sha256:ec506e672f27271a674a709e35526de0a34fa6d14b8c4c3eacd49f28e0495501", size = 134115, upload-time = "2026-03-01T21:34:41.634Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5d/dc/7b38e6c2f6d37e7a493d2421acb89de920560f2b3a933035a85ed4b9432e/aioiregul-0.2.5-py3-none-any.whl", hash = "sha256:6ddf9ec0151c74043c0f10921af7f09b68851de8745e2e4ef05aa32489279312", size = 38976, upload-time = "2026-01-23T20:47:58.815Z" },
+    { url = "https://files.pythonhosted.org/packages/06/87/6f8fcfc324fd362714fe98fcb4f422f65a0d7d26012ccc5c6ffdf6b184e6/aioiregul-0.2.6-py3-none-any.whl", hash = "sha256:ab320ab6d988dd4e090f2451aec202717be6f2fabdcce201a03475c4be6e7d62", size = 38682, upload-time = "2026-03-01T21:34:40.138Z" },
 ]
 
 [[package]]
@@ -1361,7 +1361,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aioiregul", specifier = "==0.2.5" },
+    { name = "aioiregul", specifier = "==0.2.6" },
     { name = "homeassistant", specifier = "==2026.2.3" },
 ]
 
