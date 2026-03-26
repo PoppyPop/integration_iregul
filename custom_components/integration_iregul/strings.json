@@ -9,7 +9,9 @@
       },
       "credentials": {
         "data": {
-          "password": "[%key:common::config_flow::data::password%]"
+          "password": "[%key:common::config_flow::data::password%]",
+          "upd_int": "Update interval (minutes)",
+          "host": "[%key:common::config_flow::data::host%]"
         }
       }
     },
@@ -27,7 +29,11 @@
       "init": {
         "data": {
           "password": "[%key:common::config_flow::data::password%]",
-          "upd_int": "Update interval (minutes)"
+          "upd_int": "Update interval (minutes)",
+          "host": "[%key:common::config_flow::data::host%]"
+        },
+        "data_description": {
+          "host": "Leave empty to use the default server (i-regul.fr)"
         }
       }
     }

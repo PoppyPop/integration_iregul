@@ -17,7 +17,9 @@
       },
       "credentials": {
         "data": {
-          "password": "Mot de passe"
+          "password": "Mot de passe",
+          "upd_int": "Intervalle de mise à jour (minutes)",
+          "host": "Hôte"
         }
       }
     }
@@ -27,7 +29,11 @@
       "init": {
         "data": {
           "password": "Mot de passe",
-          "upd_int": "Intervalle de mise à jour (minutes)"
+          "upd_int": "Intervalle de mise à jour (minutes)",
+          "host": "Hôte"
+        },
+        "data_description": {
+          "host": "Laisser vide pour utiliser le serveur par défaut (i-regul.fr)"
         }
       }
     }
