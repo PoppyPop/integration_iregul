@@ -22,6 +22,7 @@ from .const import (
     CONF_API_VERSION,
     CONF_DEVICE_ID,
     CONF_DEVICE_PASSWORD,
+    CONF_HOST,
     CONF_UPDATE_INTERVAL,
     DEFAULT_UPDATE_INTERVAL,
     DOMAIN,
@@ -67,15 +68,18 @@ class IRegulCoordinator(DataUpdateCoordinator[MappedFrame]):
         device_id: str,
         password: str,
         api_version: str = API_VERSION_V2,
+        host: str | None = None,
     ) -> IRegulApiInterface:
         """Create an API client based on the API version."""
         if api_version == API_VERSION_V1:
             return Device(
                 http_session=async_create_clientsession(hass),
+                host=host,
                 device_id=device_id,
                 password=password,
             )
         return IRegulClient(
+            host=host,
             device_id=device_id,
             password=password,
         )
@@ -87,6 +91,7 @@ class IRegulCoordinator(DataUpdateCoordinator[MappedFrame]):
             self.data_config[CONF_DEVICE_ID],
             self.data_config[CONF_DEVICE_PASSWORD],
             self._api_version,
+            self.data_config.get(CONF_HOST),
         )
 
     async def _async_update_data(self) -> MappedFrame:

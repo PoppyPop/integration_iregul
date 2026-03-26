@@ -16,6 +16,7 @@ from .const import (
     CONF_API_VERSION,
     CONF_DEVICE_ID,
     CONF_DEVICE_PASSWORD,
+    CONF_HOST,
     CONF_SERIAL_NUMBER,
     CONF_UPDATE_INTERVAL,
     DEFAULT_API_VERSION,
@@ -36,14 +37,13 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
     }
 )
 
-STEP_CREDENTIALS_SCHEMA = vol.Schema({vol.Required(CONF_PASSWORD): str})
-
 
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
     """Validate the user input by testing connection to device."""
     device_id = data.get(CONF_DEVICE_ID) or data.get(CONF_SERIAL_NUMBER)
     password = data.get(CONF_DEVICE_PASSWORD)
     api_version = data.get(CONF_API_VERSION, DEFAULT_API_VERSION)
+    host = data.get(CONF_HOST)
 
     if not device_id or not password:
         raise InvalidAuth
@@ -55,6 +55,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
             device_id,
             password,
             api_version,
+            host,
         )
         # Test the connection by fetching data
         await client.check_auth()
@@ -94,38 +95,47 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle the credentials step."""
         errors: dict[str, str] = {}
 
-        if user_input is None:
-            return self.async_show_form(
-                step_id="credentials",
-                data_schema=STEP_CREDENTIALS_SCHEMA,
+        default_password, default_host = "", ""
+
+        if user_input is not None:
+            full_input = {**self._device_data, **user_input}
+            full_input[CONF_DEVICE_ID] = full_input.pop(CONF_SERIAL_NUMBER)
+            full_input[CONF_DEVICE_PASSWORD] = full_input[CONF_PASSWORD]
+
+            default_password = full_input[CONF_DEVICE_PASSWORD]
+            default_host = user_input.get(CONF_HOST, "").strip()
+            if not default_host:
+                full_input.pop(CONF_HOST, None)
+
+            # Set default update interval based on API version
+            api_version = full_input.get(CONF_API_VERSION, API_VERSION_V2)
+            full_input[CONF_UPDATE_INTERVAL] = (
+                DEFAULT_UPDATE_INTERVAL_V1
+                if api_version == API_VERSION_V1
+                else DEFAULT_UPDATE_INTERVAL_V2
             )
 
-        full_input = {**self._device_data, **user_input}
-        full_input[CONF_DEVICE_ID] = full_input.pop(CONF_SERIAL_NUMBER)
-        full_input[CONF_DEVICE_PASSWORD] = full_input[CONF_PASSWORD]
-
-        # Set default update interval based on API version
-        api_version = full_input.get(CONF_API_VERSION, API_VERSION_V2)
-        full_input[CONF_UPDATE_INTERVAL] = (
-            DEFAULT_UPDATE_INTERVAL_V1
-            if api_version == API_VERSION_V1
-            else DEFAULT_UPDATE_INTERVAL_V2
-        )
-
-        try:
-            info = await validate_input(self.hass, full_input)
-        except CannotConnect:
-            errors["base"] = "cannot_connect"
-        except InvalidAuth:
-            errors["base"] = "invalid_auth"
-        except Exception:  # pylint: disable=broad-except
-            _LOGGER.exception("Unexpected exception")
-            errors["base"] = "unknown"
-        else:
-            return self.async_create_entry(title=info["title"], data=full_input)
+            try:
+                info = await validate_input(self.hass, full_input)
+            except CannotConnect:
+                errors["base"] = "cannot_connect"
+            except InvalidAuth:
+                errors["base"] = "invalid_auth"
+            except Exception:  # pylint: disable=broad-except
+                _LOGGER.exception("Unexpected exception")
+                errors["base"] = "unknown"
+            else:
+                return self.async_create_entry(title=info["title"], data=full_input)
 
         return self.async_show_form(
-            step_id="credentials", data_schema=STEP_CREDENTIALS_SCHEMA, errors=errors
+            step_id="credentials",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_PASSWORD, default=default_password): str,
+                    vol.Optional(CONF_HOST): str,
+                }
+            ),
+            errors=errors,
         )
 
     @staticmethod
@@ -152,6 +162,11 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 CONF_DEVICE_PASSWORD: user_input[CONF_PASSWORD],
                 CONF_UPDATE_INTERVAL: user_input[CONF_UPDATE_INTERVAL],
             }
+            host = user_input.get(CONF_HOST, "").strip()
+            if host:
+                new_data[CONF_HOST] = host
+            else:
+                new_data.pop(CONF_HOST, None)
             self.hass.config_entries.async_update_entry(self.config_entry, data=new_data)
             await self.hass.config_entries.async_reload(self.config_entry.entry_id)
             return self.async_create_entry(
@@ -159,6 +174,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 data={
                     CONF_PASSWORD: user_input[CONF_PASSWORD],
                     CONF_UPDATE_INTERVAL: user_input[CONF_UPDATE_INTERVAL],
+                    CONF_HOST: host or None,
                 },
             )
 
@@ -183,6 +199,7 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     vol.Required(CONF_UPDATE_INTERVAL, default=current_interval): vol.All(
                         vol.Coerce(int), vol.Range(min=1, max=1440)
                     ),
+                    vol.Optional(CONF_HOST): str,
                 }
             ),
         )
