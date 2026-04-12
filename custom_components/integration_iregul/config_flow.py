@@ -27,6 +27,7 @@ from .const import (
 from .coordinator import CannotConnect, InvalidAuth, IRegulCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+CONF_USE_CUSTOM_HOST = "use_custom_host"
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
@@ -36,6 +37,32 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_SERIAL_NUMBER): str,
     }
 )
+
+
+def _get_host_defaults(
+    saved_host: str | None, user_input: dict[str, Any] | None
+) -> tuple[bool, str]:
+    """Return the checkbox and host defaults for the form."""
+    if user_input is None:
+        return bool(saved_host), saved_host or ""
+
+    return (
+        bool(user_input.get(CONF_USE_CUSTOM_HOST, bool(saved_host))),
+        user_input.get(CONF_HOST, saved_host or ""),
+    )
+
+
+def _credentials_schema(
+    default_password: str, use_custom_host: bool, default_host: str
+) -> vol.Schema:
+    """Build the credentials schema."""
+    return vol.Schema(
+        {
+            vol.Required(CONF_PASSWORD, default=default_password): str,
+            vol.Required(CONF_USE_CUSTOM_HOST, default=use_custom_host): bool,
+            vol.Optional(CONF_HOST, default=default_host): str,
+        }
+    )
 
 
 async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
@@ -95,16 +122,25 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle the credentials step."""
         errors: dict[str, str] = {}
 
-        default_password, default_host = "", ""
+        saved_host = self._device_data.get(CONF_HOST)
+        default_password = ""
+        use_custom_host, default_host = _get_host_defaults(saved_host, user_input)
 
         if user_input is not None:
             full_input = {**self._device_data, **user_input}
             full_input[CONF_DEVICE_ID] = full_input.pop(CONF_SERIAL_NUMBER)
             full_input[CONF_DEVICE_PASSWORD] = full_input[CONF_PASSWORD]
+            full_input.pop(CONF_USE_CUSTOM_HOST, None)
 
             default_password = full_input[CONF_DEVICE_PASSWORD]
-            default_host = user_input.get(CONF_HOST, "").strip()
-            if not default_host:
+            default_host = user_input.get(CONF_HOST, default_host)
+            normalized_host = default_host.strip()
+
+            if use_custom_host and not normalized_host:
+                errors["base"] = "host_required"
+            elif use_custom_host:
+                full_input[CONF_HOST] = normalized_host
+            else:
                 full_input.pop(CONF_HOST, None)
 
             # Set default update interval based on API version
@@ -115,25 +151,25 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 else DEFAULT_UPDATE_INTERVAL_V2
             )
 
-            try:
-                info = await validate_input(self.hass, full_input)
-            except CannotConnect:
-                errors["base"] = "cannot_connect"
-            except InvalidAuth:
-                errors["base"] = "invalid_auth"
-            except Exception:  # pylint: disable=broad-except
-                _LOGGER.exception("Unexpected exception")
-                errors["base"] = "unknown"
-            else:
-                return self.async_create_entry(title=info["title"], data=full_input)
+            if not errors:
+                try:
+                    info = await validate_input(self.hass, full_input)
+                except CannotConnect:
+                    errors["base"] = "cannot_connect"
+                except InvalidAuth:
+                    errors["base"] = "invalid_auth"
+                except Exception:  # pylint: disable=broad-except
+                    _LOGGER.exception("Unexpected exception")
+                    errors["base"] = "unknown"
+                else:
+                    return self.async_create_entry(title=info["title"], data=full_input)
 
         return self.async_show_form(
             step_id="credentials",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(CONF_PASSWORD, default=default_password): str,
-                    vol.Optional(CONF_HOST): str,
-                }
+            data_schema=_credentials_schema(
+                default_password,
+                use_custom_host,
+                default_host,
             ),
             errors=errors,
         )
@@ -156,28 +192,6 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None):
         """Handle options flow."""
-        if user_input is not None:
-            new_data = {
-                **self.config_entry.data,
-                CONF_DEVICE_PASSWORD: user_input[CONF_PASSWORD],
-                CONF_UPDATE_INTERVAL: user_input[CONF_UPDATE_INTERVAL],
-            }
-            host = user_input.get(CONF_HOST, "").strip()
-            if host:
-                new_data[CONF_HOST] = host
-            else:
-                new_data.pop(CONF_HOST, None)
-            self.hass.config_entries.async_update_entry(self.config_entry, data=new_data)
-            await self.hass.config_entries.async_reload(self.config_entry.entry_id)
-            return self.async_create_entry(
-                title="",
-                data={
-                    CONF_PASSWORD: user_input[CONF_PASSWORD],
-                    CONF_UPDATE_INTERVAL: user_input[CONF_UPDATE_INTERVAL],
-                    CONF_HOST: host or None,
-                },
-            )
-
         current_password = self.config_entry.options.get(
             CONF_PASSWORD, self.config_entry.data.get(CONF_DEVICE_PASSWORD, "")
         )
@@ -190,6 +204,50 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             else DEFAULT_UPDATE_INTERVAL_V2
         )
         current_interval = self.config_entry.data.get(CONF_UPDATE_INTERVAL, default_interval)
+        saved_host = self.config_entry.data.get(CONF_HOST)
+        use_custom_host, current_host = _get_host_defaults(saved_host, user_input)
+
+        if user_input is not None:
+            current_password = user_input[CONF_PASSWORD]
+            current_interval = user_input[CONF_UPDATE_INTERVAL]
+            current_host = user_input.get(CONF_HOST, current_host)
+            normalized_host = current_host.strip()
+
+            if use_custom_host and not normalized_host:
+                return self.async_show_form(
+                    step_id="init",
+                    data_schema=vol.Schema(
+                        {
+                            vol.Required(CONF_PASSWORD, default=current_password): str,
+                            vol.Required(CONF_UPDATE_INTERVAL, default=current_interval): vol.All(
+                                vol.Coerce(int), vol.Range(min=1, max=1440)
+                            ),
+                            vol.Required(CONF_USE_CUSTOM_HOST, default=use_custom_host): bool,
+                            vol.Optional(CONF_HOST, default=current_host): str,
+                        }
+                    ),
+                    errors={"base": "host_required"},
+                )
+
+            new_data = {
+                **self.config_entry.data,
+                CONF_DEVICE_PASSWORD: user_input[CONF_PASSWORD],
+                CONF_UPDATE_INTERVAL: user_input[CONF_UPDATE_INTERVAL],
+            }
+            if use_custom_host:
+                new_data[CONF_HOST] = normalized_host
+            else:
+                new_data.pop(CONF_HOST, None)
+            self.hass.config_entries.async_update_entry(self.config_entry, data=new_data)
+            await self.hass.config_entries.async_reload(self.config_entry.entry_id)
+            return self.async_create_entry(
+                title="",
+                data={
+                    CONF_PASSWORD: user_input[CONF_PASSWORD],
+                    CONF_UPDATE_INTERVAL: user_input[CONF_UPDATE_INTERVAL],
+                    CONF_HOST: normalized_host if use_custom_host else None,
+                },
+            )
 
         return self.async_show_form(
             step_id="init",
@@ -199,7 +257,8 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                     vol.Required(CONF_UPDATE_INTERVAL, default=current_interval): vol.All(
                         vol.Coerce(int), vol.Range(min=1, max=1440)
                     ),
-                    vol.Optional(CONF_HOST): str,
+                    vol.Required(CONF_USE_CUSTOM_HOST, default=use_custom_host): bool,
+                    vol.Optional(CONF_HOST, default=current_host): str,
                 }
             ),
         )

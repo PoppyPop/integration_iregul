@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -27,6 +28,17 @@ pytestmark = [
     pytest.mark.asyncio,
     pytest.mark.usefixtures("enable_custom_integrations"),
 ]
+
+CONF_USE_CUSTOM_HOST = "use_custom_host"
+
+
+def _get_schema_default(result: dict[str, Any], field_name: str) -> Any:
+    """Return the default value for a form field."""
+    for key in result["data_schema"].schema:
+        if key.schema == field_name:
+            return key.default()
+
+    raise AssertionError(f"Field {field_name} not found in schema")
 
 
 async def test_full_user_flow(hass):
@@ -55,7 +67,7 @@ async def test_full_user_flow(hass):
 
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"],
-            {CONF_PASSWORD: "super-secret"},
+            {CONF_PASSWORD: "super-secret", CONF_USE_CUSTOM_HOST: False},
         )
 
         assert result["type"] == FlowResultType.CREATE_ENTRY
@@ -156,7 +168,12 @@ async def test_options_flow_updates_password(hass):
 
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
-        {CONF_PASSWORD: "new-secret", CONF_UPDATE_INTERVAL: 5, CONF_HOST: ""},
+        {
+            CONF_PASSWORD: "new-secret",
+            CONF_UPDATE_INTERVAL: 5,
+            CONF_USE_CUSTOM_HOST: False,
+            CONF_HOST: "",
+        },
     )
     await hass.async_block_till_done()
 
@@ -185,7 +202,12 @@ async def test_options_flow_sets_host(hass):
 
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
-        {CONF_PASSWORD: "secret", CONF_UPDATE_INTERVAL: 5, CONF_HOST: "custom.example.com"},
+        {
+            CONF_PASSWORD: "secret",
+            CONF_UPDATE_INTERVAL: 5,
+            CONF_USE_CUSTOM_HOST: True,
+            CONF_HOST: "custom.example.com",
+        },
     )
     await hass.async_block_till_done()
 
@@ -209,9 +231,61 @@ async def test_options_flow_clears_host(hass):
     result = await hass.config_entries.options.async_init(entry.entry_id)
     result = await hass.config_entries.options.async_configure(
         result["flow_id"],
-        {CONF_PASSWORD: "secret", CONF_UPDATE_INTERVAL: 5, CONF_HOST: ""},
+        {
+            CONF_PASSWORD: "secret",
+            CONF_UPDATE_INTERVAL: 5,
+            CONF_USE_CUSTOM_HOST: False,
+            CONF_HOST: "",
+        },
     )
     await hass.async_block_till_done()
 
     assert result["type"] == FlowResultType.CREATE_ENTRY
     assert CONF_HOST not in entry.data
+
+
+async def test_options_flow_restores_saved_host_in_form(hass):
+    """Test the options form restores the current host and checkbox state."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_API_VERSION: API_VERSION_V2,
+            CONF_DEVICE_ID: "SN123456",
+            CONF_DEVICE_PASSWORD: "secret",
+            CONF_HOST: "custom.example.com",
+        },
+    )
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+
+    assert result["type"] == FlowResultType.FORM
+    assert _get_schema_default(result, CONF_USE_CUSTOM_HOST) is True
+    assert _get_schema_default(result, CONF_HOST) == "custom.example.com"
+
+
+async def test_options_flow_requires_host_when_enabled(hass):
+    """Test enabling a custom host requires a non-empty value."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        data={
+            CONF_API_VERSION: API_VERSION_V2,
+            CONF_DEVICE_ID: "SN123456",
+            CONF_DEVICE_PASSWORD: "secret",
+        },
+    )
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.options.async_init(entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"],
+        {
+            CONF_PASSWORD: "secret",
+            CONF_UPDATE_INTERVAL: 5,
+            CONF_USE_CUSTOM_HOST: True,
+            CONF_HOST: "   ",
+        },
+    )
+
+    assert result["type"] == FlowResultType.FORM
+    assert result["errors"] == {"base": "host_required"}

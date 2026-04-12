@@ -10,13 +10,19 @@
       "credentials": {
         "data": {
           "password": "[%key:common::config_flow::data::password%]",
+          "use_custom_host": "Use custom host",
           "upd_int": "Update interval (minutes)",
           "host": "[%key:common::config_flow::data::host%]"
+        },
+        "data_description": {
+          "use_custom_host": "Enable to override the default server",
+          "host": "Last saved value is shown here when a custom host is enabled"
         }
       }
     },
     "error": {
       "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+      "host_required": "Enter a host or disable the custom host option",
       "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
       "unknown": "[%key:common::config_flow::error::unknown%]"
     },
@@ -29,11 +35,13 @@
       "init": {
         "data": {
           "password": "[%key:common::config_flow::data::password%]",
+          "use_custom_host": "Use custom host",
           "upd_int": "Update interval (minutes)",
           "host": "[%key:common::config_flow::data::host%]"
         },
         "data_description": {
-          "host": "Leave empty to use the default server (i-regul.fr)"
+          "use_custom_host": "Enable to override the default server",
+          "host": "Last saved value is shown here when a custom host is enabled"
         }
       }
     }

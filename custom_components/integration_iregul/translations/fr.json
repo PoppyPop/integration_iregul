@@ -5,6 +5,7 @@
     },
     "error": {
       "cannot_connect": "Failed to connect",
+      "host_required": "Saisissez un hôte ou désactivez l'option d'hôte personnalisé",
       "invalid_auth": "Authentification invalide",
       "unknown": "Erreur inattendue"
     },
@@ -18,8 +19,13 @@
       "credentials": {
         "data": {
           "password": "Mot de passe",
+          "use_custom_host": "Utiliser un hôte personnalisé",
           "upd_int": "Intervalle de mise à jour (minutes)",
           "host": "Hôte"
+        },
+        "data_description": {
+          "use_custom_host": "Activez cette option pour remplacer le serveur par défaut",
+          "host": "La dernière valeur enregistrée s'affiche ici lorsqu'un hôte personnalisé est activé"
         }
       }
     }
@@ -29,11 +35,13 @@
       "init": {
         "data": {
           "password": "Mot de passe",
+          "use_custom_host": "Utiliser un hôte personnalisé",
           "upd_int": "Intervalle de mise à jour (minutes)",
           "host": "Hôte"
         },
         "data_description": {
-          "host": "Laisser vide pour utiliser le serveur par défaut (i-regul.fr)"
+          "use_custom_host": "Activez cette option pour remplacer le serveur par défaut",
+          "host": "La dernière valeur enregistrée s'affiche ici lorsqu'un hôte personnalisé est activé"
         }
       }
     }
