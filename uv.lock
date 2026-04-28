@@ -1150,7 +1150,7 @@ dev = [
     { name = "pytest", specifier = ">=7.4.0" },
     { name = "pytest-asyncio", specifier = ">=0.21.0" },
     { name = "pytest-cov", specifier = ">=4.1.0" },
-    { name = "pytest-homeassistant-custom-component", specifier = ">=0.13.0" },
+    { name = "pytest-homeassistant-custom-component", specifier = ">=0.13.325" },
     { name = "pytest-xdist", specifier = ">=3.3.0" },
     { name = "ruff", specifier = ">=0.15.12" },
 ]
