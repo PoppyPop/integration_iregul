@@ -1208,7 +1208,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "aioiregul", specifier = ">=0.2.7" },
-    { name = "homeassistant", specifier = ">=2026.7.1" },
+    { name = "homeassistant", specifier = ">=2026.7.2" },
 ]
 
 [package.metadata.requires-dev]
